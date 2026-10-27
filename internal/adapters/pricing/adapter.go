@@ -39,3 +39,4 @@ func (p *BasePricingAdapter) FetchPlansAndPrices(ctx context.Context) (*adapters
 		RawItems:     []adapters.RawCatalogItem{},
 	}, nil
 }
+

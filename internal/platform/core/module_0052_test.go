@@ -20,3 +20,4 @@ func TestModule0052_VerifyWorkspace(t *testing.T) {
 	errBad := badVerifier.VerifyWorkspace(context.Background())
 	assert.Error(t, errBad)
 }
+

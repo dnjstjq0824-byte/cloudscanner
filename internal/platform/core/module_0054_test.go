@@ -19,3 +19,4 @@ func TestModule0054_VerifyAdapters(t *testing.T) {
 		})
 	}
 }
+

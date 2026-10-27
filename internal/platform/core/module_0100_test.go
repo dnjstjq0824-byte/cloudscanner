@@ -24,3 +24,4 @@ func TestModule0100_Phase1IntegrationSmoke(t *testing.T) {
 	assert.True(t, report.SSRFFilterActive)
 	assert.True(t, report.IdempotencyEnforced)
 }
+

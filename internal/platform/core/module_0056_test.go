@@ -46,3 +46,4 @@ func TestModule0056_RFC9457AndPanicRecovery(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 	assert.Equal(t, "application/problem+json", res.Header.Get("Content-Type"))
 }
+

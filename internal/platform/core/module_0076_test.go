@@ -18,3 +18,4 @@ func TestModule0076_KMSEnvelopeEncryption(t *testing.T) {
 	)
 	require.NoError(t, err, "KMS Envelope encryption with AAD tamper-resistance must pass")
 }
+

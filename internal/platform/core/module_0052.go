@@ -47,3 +47,4 @@ func (m *Module0052) VerifyWorkspace(ctx context.Context) error {
 	}
 	return nil
 }
+

@@ -21,3 +21,4 @@ func TestModule0096_ArchitectureFitness(t *testing.T) {
 	errAdapters := m.VerifyAdapterPackageSeparation(ctx)
 	require.NoError(t, errAdapters, "Four adapters must maintain strict package separation")
 }
+

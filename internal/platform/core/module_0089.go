@@ -105,3 +105,4 @@ func (m *Module0089) VerifySSRFFilter(ipStr string, expectBlocked bool) error {
 	}
 	return nil
 }
+

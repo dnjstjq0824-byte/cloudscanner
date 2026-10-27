@@ -15,3 +15,4 @@ func TestModule0073_TransactionalOutbox(t *testing.T) {
 	err := m.TestOutboxCycle(ctx, "SERVER_PROVISION_APPROVED", "srv-test-12345", []byte(`{"hourly_cost":0.02}`))
 	require.NoError(t, err, "Transactional Outbox record-and-relay lifecycle should succeed")
 }
+

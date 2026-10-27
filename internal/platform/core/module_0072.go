@@ -93,3 +93,4 @@ func (m *Module0072) VerifyRLSInjectionSyntax(orgID string) (string, error) {
 
 // Ensure database package compiles and implements Config.
 var _ *database.Config = database.DefaultPoolConfig("postgres://localhost/test")
+

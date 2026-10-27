@@ -68,3 +68,4 @@ func (a *BaseAffiliateAdapter) ParseReconciliationCSV(ctx context.Context, csvBy
 	}
 	return []adapters.RawConversionEvent{}, nil
 }
+

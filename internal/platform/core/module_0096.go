@@ -99,3 +99,4 @@ func (m *Module0096) VerifyAdapterPackageSeparation(ctx context.Context) error {
 
 	return nil
 }
+

@@ -32,3 +32,4 @@ func TestModule0089_SSRFProtection(t *testing.T) {
 		})
 	}
 }
+

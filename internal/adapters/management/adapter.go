@@ -89,3 +89,4 @@ func (m *BaseManagementAdapter) DeleteServer(ctx context.Context, cred adapters.
 	}
 	return errors.New("unimplemented delete server")
 }
+

@@ -49,3 +49,4 @@ func TestModule0057_IdempotencyMiddleware(t *testing.T) {
 	handler.ServeHTTP(recDup, reqDup)
 	assert.Equal(t, http.StatusConflict, recDup.Code)
 }
+

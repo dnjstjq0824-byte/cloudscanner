@@ -29,3 +29,4 @@ func TestModule0059_CircuitBreakerIsolation(t *testing.T) {
 	require.NoError(t, errFresh)
 	assert.Equal(t, "healthy", res)
 }
+

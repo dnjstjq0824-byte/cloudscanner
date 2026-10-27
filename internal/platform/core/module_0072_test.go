@@ -27,3 +27,4 @@ func TestModule0072_DatabaseAndRLS(t *testing.T) {
 	_, errEmpty := m.VerifyRLSInjectionSyntax("")
 	assert.Error(t, errEmpty)
 }
+

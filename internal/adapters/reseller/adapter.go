@@ -30,3 +30,4 @@ func (r *BaseResellerAdapter) IsContractActive() bool {
 }
 
 var _ adapters.ResellerAdapter = (*BaseResellerAdapter)(nil)
+

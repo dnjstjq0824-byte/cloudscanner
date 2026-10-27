@@ -174,3 +174,4 @@ func (m *Module0057) TestLocking(ctx context.Context, key string) error {
 
 	return m.store.ReleaseLock(ctx, key)
 }
+

@@ -65,3 +65,4 @@ jobs:
 
       - name: Build Nuxt 3 Application
         run: npm run build
+

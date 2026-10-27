@@ -69,3 +69,4 @@ func (m *Module0090) VerifyHeaders(w http.ResponseWriter) bool {
 		h.Get("X-Content-Type-Options") == "nosniff" &&
 		h.Get("Content-Security-Policy") != ""
 }
+

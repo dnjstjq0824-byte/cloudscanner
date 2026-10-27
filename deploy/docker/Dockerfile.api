@@ -19,3 +19,4 @@ EXPOSE 8080
 USER nobody:nobody
 
 ENTRYPOINT ["/app/api"]
+

@@ -15,3 +15,4 @@ func TestModule0074_PriorityQueues(t *testing.T) {
 	err := m.VerifyPriorityScheduling(ctx)
 	require.NoError(t, err, "Multi-priority queue must prioritize critical tasks over pricing sync")
 }
+

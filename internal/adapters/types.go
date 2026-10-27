@@ -172,3 +172,4 @@ type ResellerAdapter interface {
 	ProviderSlug() string
 	IsContractActive() bool // Returns false for all providers in V1 until legal sign-off
 }
+

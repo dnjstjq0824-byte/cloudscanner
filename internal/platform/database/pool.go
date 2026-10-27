@@ -160,3 +160,4 @@ func (db *DBPool) RunMigrations(ctx context.Context, migrationsDir string) ([]st
 
 	return applied, nil
 }
+

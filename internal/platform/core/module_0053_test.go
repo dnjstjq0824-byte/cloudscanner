@@ -19,3 +19,4 @@ func TestModule0053_VerifyFrontend(t *testing.T) {
 	errBad := badVerifier.VerifyFrontend(context.Background())
 	assert.Error(t, errBad)
 }
+

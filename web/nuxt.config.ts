@@ -47,3 +47,4 @@ export default defineNuxtConfig({
     typeCheck: false
   }
 })
+

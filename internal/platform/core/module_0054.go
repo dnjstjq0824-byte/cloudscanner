@@ -62,3 +62,4 @@ func (m *Module0054) VerifyAdapters(ctx context.Context, providerSlug string) er
 
 	return nil
 }
+

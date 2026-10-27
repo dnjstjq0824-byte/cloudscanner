@@ -29,3 +29,4 @@ func TestModule0090_SecurityHeaders(t *testing.T) {
 	assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
 	assert.Contains(t, rec.Header().Get("Strict-Transport-Security"), "max-age=63072000")
 }
+

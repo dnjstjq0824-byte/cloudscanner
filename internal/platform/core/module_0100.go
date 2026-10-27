@@ -90,3 +90,4 @@ func (m *Module0100) RunPhase1SmokeTest(ctx context.Context) (*Phase1Report, err
 	report.AllGatesGreen = true
 	return report, nil
 }
+

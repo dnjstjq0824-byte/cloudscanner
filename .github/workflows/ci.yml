@@ -1,0 +1,67 @@
+name: CloudScanr CI Quality Gate
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-gate:
+    name: Go Backend Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Verify Article 1 Zero TreeScan Coupling
+        run: |
+          if grep -riI "treescan" cmd/ internal/ web/ 2>/dev/null | grep -v "treescan_isolation" | grep -v "TreeScan" | grep -v "robots.txt"; then
+            echo "ERROR: Forbidden TreeScan dependency found!"
+            exit 1
+          fi
+
+      - name: Go Tidy Check
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Run Unit Tests
+        run: go test -v -race -coverprofile=coverage.txt ./internal/... ./cmd/...
+
+      - name: Build Binaries
+        run: |
+          go build -v ./cmd/api
+          go build -v ./cmd/worker
+
+  frontend-gate:
+    name: Nuxt 3 Frontend Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'web/package.json'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Type Check & Lint
+        run: npx vue-tsc --noEmit
+
+      - name: Build Nuxt 3 Application
+        run: npm run build

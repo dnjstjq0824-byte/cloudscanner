@@ -1,0 +1,21 @@
+# Multi-stage build for CloudScanr Go API
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-w -s" -o /bin/api ./cmd/api
+
+FROM alpine:3.20
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /app
+COPY --from=builder /bin/api /app/api
+COPY --from=builder /app/03_DATABASE/migrations /app/migrations
+
+EXPOSE 8080
+USER nobody:nobody
+
+ENTRYPOINT ["/app/api"]

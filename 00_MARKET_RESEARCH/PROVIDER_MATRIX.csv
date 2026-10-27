@@ -1,0 +1,19 @@
+provider_id,provider_name,hq_country,tier_priority,primary_categories,affiliate_status,pricing_api_status,mgmt_api_status,partner_program_status,verified_date
+digitalocean,DigitalOcean,US,TIER_1_PRIMARY,"VPS,Shared_VM,Dedicated_VM,GPU,Managed_DB,Kubernetes,Object_Storage,Block_Storage,Load_Balancer,App_Platform",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+upcloud,UpCloud,FI,TIER_1_PRIMARY,"VPS,Shared_VM,Dedicated_VM,GPU,Managed_DB,Kubernetes,Object_Storage,Block_Storage",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+cloudways,Cloudways (by DigitalOcean),MT,TIER_1_PRIMARY,"Managed_Hosting,WordPress_Hosting,Developer_Hosting",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+vultr,Vultr,US,TIER_1_PRIMARY,"VPS,Shared_VM,Dedicated_VM,GPU,Bare_Metal,Managed_DB,Kubernetes,Object_Storage,Block_Storage",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+hetzner,Hetzner Online,DE,TIER_1_PRIMARY,"VPS,Shared_VM,Dedicated_VM,Bare_Metal,Block_Storage,Object_Storage,Load_Balancer",VERIFIED,VERIFIED,VERIFIED,NOT_SUPPORTED,2026-10-28
+akamai_linode,Akamai Cloud (Linode),US,TIER_1_PRIMARY,"VPS,Shared_VM,Dedicated_VM,GPU,Managed_DB,Kubernetes,Object_Storage,Block_Storage,CDN",REQUIRES_APPLICATION,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+contabo,Contabo,DE,TIER_2_SECONDARY,"VPS,Dedicated_VM,Bare_Metal,Object_Storage",VERIFIED,DOCUMENTATION_UNAVAILABLE,VERIFIED,CONTRACT_REQUIRED,2026-10-28
+hostinger,Hostinger,LT,TIER_2_SECONDARY,"VPS,Managed_Hosting,WordPress_Hosting",VERIFIED,REQUIRES_APPLICATION,VERIFIED,VERIFIED,2026-10-28
+aws,Amazon Web Services (AWS),US,TIER_1_PRIMARY,"Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes,Load_Balancer,CDN,AI_Infrastructure",CONTRACT_REQUIRED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+gcp,Google Cloud Platform (GCP),US,TIER_1_PRIMARY,"Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes,Load_Balancer,CDN,AI_Infrastructure",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+azure,Microsoft Azure,US,TIER_2_SECONDARY,"Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes,Load_Balancer,CDN,AI_Infrastructure",CONTRACT_REQUIRED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+ovhcloud,OVHcloud,FR,TIER_2_SECONDARY,"VPS,Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes",REQUIRES_APPLICATION,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+scaleway,Scaleway,FR,TIER_2_SECONDARY,"VPS,Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes,AI_Infrastructure",CONTRACT_REQUIRED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+kamatera,Kamatera,US,TIER_2_SECONDARY,"VPS,Shared_VM,Dedicated_VM,Block_Storage,Load_Balancer,Managed_Hosting",VERIFIED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+ionos,IONOS Cloud,DE,TIER_2_SECONDARY,"VPS,Shared_VM,Dedicated_VM,Bare_Metal,Managed_DB,Kubernetes,Object_Storage,WordPress_Hosting",VERIFIED,DOCUMENTATION_UNAVAILABLE,VERIFIED,VERIFIED,2026-10-28
+oracle_cloud,Oracle Cloud Infrastructure (OCI),US,TIER_2_SECONDARY,"Shared_VM,Dedicated_VM,GPU,Bare_Metal,Object_Storage,Block_Storage,Managed_DB,Kubernetes,AI_Infrastructure",NOT_SUPPORTED,VERIFIED,VERIFIED,VERIFIED,2026-10-28
+cloudflare,Cloudflare,US,TIER_2_SECONDARY,"CDN,Object_Storage,Developer_Hosting,AI_Infrastructure,Load_Balancer",CONTRACT_REQUIRED,DOCUMENTATION_UNAVAILABLE,VERIFIED,VERIFIED,2026-10-28
+runpod,RunPod (GPU & AI Cloud),US,TIER_2_SECONDARY,"GPU,AI_Infrastructure,Block_Storage",VERIFIED,VERIFIED,VERIFIED,REQUIRES_APPLICATION,2026-10-28

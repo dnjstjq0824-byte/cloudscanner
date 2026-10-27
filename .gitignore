@@ -1,0 +1,42 @@
+# Binaries and build artifacts
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage artifacts
+*.test
+*.out
+cover.out
+coverage.txt
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+.nitro/
+dist/
+*.local
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Task logs & scratch
+.system_generated/
+*.tmp

@@ -1,0 +1,736 @@
+openapi: 3.1.0
+info:
+  title: CloudScanr Global Cloud Price Comparison, Affiliate & BYOC Management API
+  version: 1.0.0
+  summary: Standalone REST API for CloudScanr (cloudscanr.com) — Zero TreeScan Dependency
+  description: |
+    Complete OpenAPI 3.1 contract covering all 22 API groups mandated by Article 19:
+    1. Authentication API, 2. Users API, 3. Organizations API, 4. Providers API,
+    5. Cloud Catalog API, 6. Pricing API, 7. Comparison API, 8. Search API,
+    9. Promotions API, 10. Affiliate API, 11. Tracking API, 12. Cloud Connection API,
+    13. Server Provisioning API, 14. Server Management API, 15. Budget API,
+    16. Cloud Cost API, 17. Price Alert API, 18. Analytics API, 19. Admin API,
+    20. Content API, 21. Audit API, 22. Notifications API.
+  contact:
+    name: CloudScanr Lead System Architecture Team
+    url: https://cloudscanr.com
+servers:
+  - url: https://api.cloudscanr.com
+    description: Production Edge API
+  - url: https://staging-api.cloudscanr.com
+    description: Staging Verification API
+  - url: http://localhost:8080
+    description: Local Developer & Agent Simulator
+tags:
+  - name: 01_Authentication
+    description: Registration, Email Verification, Login, MFA/TOTP, Passkeys, Token Refresh
+  - name: 02_Users
+    description: User Profile, Preferences, Sessions, Data Export & Account Deletion
+  - name: 03_Organizations
+    description: Multi-Tenant Organizations, Team Invitations & RBAC Permissions
+  - name: 04_Providers
+    description: Cloud Providers Directory, Capabilities & Regions
+  - name: 05_Cloud_Catalog
+    description: 16-Category Cloud Product Catalog, SKUs & Hardware Specifications
+  - name: 06_Pricing
+    description: 36-Dimension TCO Estimation, FX Rates, Tax Policies & Historical Snapshots
+  - name: 07_Comparison
+    description: Side-by-Side Multi-SKU Comparison Lists & Shareable Matrices
+  - name: 08_Search
+    description: Sub-50ms OpenSearch Facets, Natural Language Spec Parser & Rankings
+  - name: 09_Promotions
+    description: Free Trial Credits, Promotional Coupons & Validity Terms
+  - name: 10_Affiliate
+    description: Public Affiliate Programs, Campaigns & Compliant Link Metadata
+  - name: 11_Tracking
+    description: /go/{slug} Outbound Redirect & Signed Network Conversion Postbacks
+  - name: 12_Cloud_Connection
+    description: BYOC Account OAuth2 / Scoped Token Connection, KMS Encryption & Verification
+  - name: 13_Server_Provisioning
+    description: Cost Approval Gate & Idempotent Multi-Cloud Server Creation
+  - name: 14_Server_Management
+    description: Server Inventory, Power Control, Resize, Backups, Firewalls, SSH Keys & Safe Deletion
+  - name: 15_Budget
+    description: Organization & Connection Monthly Spend Caps & Hard Provisioning Blocks
+  - name: 16_Cloud_Cost
+    description: Real-time BYOC Run-Rate, Accrued Spend & Month-End Cost Forecast
+  - name: 17_Price_Alert
+    description: Automated SKU & Spec-Threshold Price Drop Subscriptions
+  - name: 18_Analytics
+    description: Affiliate Yield (EPC/CVR), Search Demand Trends & Funnel Metrics
+  - name: 19_Admin
+    description: Provider Sync Quarantine, Affiliate Ledger Reconciliation & Security Freeze
+  - name: 20_Content
+    description: Tutorials, Verified Benchmarks, Provider Reviews & Methodology
+  - name: 21_Audit
+    description: Tamper-Evident Hash-Chained Security & Cloud Operation Audit Logs
+  - name: 22_Notifications
+    description: User In-App Notifications, Email Alerts & SSRF-Safe Webhook Dispatch
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO-v4
+      description: Short-lived (15m) access token with user_id, org_id, role, and step_up_mfa claims.
+    StepUpMFAAuth:
+      type: apiKey
+      in: header
+      name: X-Step-Up-MFA-Token
+      description: Required for write-token connection, server provisioning approval, and server deletion.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+      description: Unique client key preventing duplicate execution and double billing.
+    OrgIdHeader:
+      name: X-Organization-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Active tenant organization context enforced via PostgreSQL RLS.
+  schemas:
+    ProblemDetails:
+      type: object
+      required: [type, title, status, detail, request_id]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code: { type: string }
+        request_id: { type: string }
+    SKUItem:
+      type: object
+      required: [id, provider_slug, external_sku_code, category, specs, pricing, freshness_status]
+      properties:
+        id: { type: string, format: uuid }
+        provider_slug: { type: string }
+        external_sku_code: { type: string }
+        display_name: { type: string }
+        category: { type: string }
+        region_code: { type: string }
+        country_code: { type: string }
+        freshness_status: { type: string, enum: [FRESH, STALE, QUARANTINED, UNVERIFIED] }
+        value_score: { type: number }
+        specs:
+          type: object
+          properties:
+            vcpu_count: { type: integer }
+            cpu_architecture: { type: string, enum: [x86_64, arm64] }
+            cpu_allocation_type: { type: string, enum: [SHARED, BURSTABLE, DEDICATED] }
+            ram_mb: { type: integer }
+            storage_type: { type: string, enum: [NVME, SSD, HDD, NETWORK_BLOCK, NONE] }
+            storage_gb: { type: integer }
+            included_bandwidth_gb: { type: integer }
+            ipv4_included_count: { type: integer }
+            ipv6_supported: { type: boolean }
+            gpu_model: { type: ["string", "null"] }
+            gpu_count: { type: integer }
+            gpu_vram_gb: { type: integer }
+        pricing:
+          type: object
+          properties:
+            native_currency: { type: string }
+            raw_hourly_price: { type: string }
+            raw_monthly_price: { type: string }
+            normalized_hourly_usd: { type: string }
+            normalized_monthly_730h_usd: { type: string }
+            tax_included: { type: boolean }
+            collected_at: { type: string, format: date-time }
+            official_source_url: { type: string, format: uri }
+    TCOEstimateRequest:
+      type: object
+      required: [sku_ids, usage_hours, estimated_egress_gb, target_currency]
+      properties:
+        sku_ids:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 1
+          maxItems: 20
+        usage_hours: { type: integer, minimum: 1, maximum: 8784, default: 730 }
+        estimated_egress_gb: { type: number, minimum: 0, default: 500 }
+        required_ipv4_count: { type: integer, minimum: 0, maximum: 16, default: 1 }
+        enable_backups: { type: boolean, default: false }
+        snapshot_storage_gb: { type: number, minimum: 0, default: 0 }
+        target_currency: { type: string, default: USD }
+        country_code_for_tax: { type: string, default: KR }
+        include_tax: { type: boolean, default: false }
+    CostApprovalRequest:
+      type: object
+      required: [connection_id, operation_type, sku_id, region_code, acknowledged_monthly_cost_usd]
+      properties:
+        connection_id: { type: string, format: uuid }
+        operation_type: { type: string, enum: [CREATE_SERVER, RESIZE_SERVER, ENABLE_BACKUP, DELETE_SERVER, REBUILD_SERVER] }
+        sku_id: { type: string, format: uuid }
+        target_resource_id: { type: ["string", "null"], format: uuid }
+        region_code: { type: string }
+        acknowledged_hourly_cost_usd: { type: string }
+        acknowledged_monthly_cost_usd: { type: string }
+        destructive_confirmation_hostname: { type: ["string", "null"] }
+    CreateServerRequest:
+      type: object
+      required: [connection_id, approval_id, sku_id, region_code, image_slug, hostname]
+      properties:
+        connection_id: { type: string, format: uuid }
+        approval_id: { type: string, format: uuid }
+        sku_id: { type: string, format: uuid }
+        region_code: { type: string }
+        image_slug: { type: string }
+        hostname: { type: string, pattern: "^[a-zA-Z0-9][a-zA-Z0-9.-]{1,61}[a-zA-Z0-9]$" }
+        ssh_key_ids:
+          type: array
+          items: { type: string }
+        enable_backups: { type: boolean, default: false }
+        enable_ipv6: { type: boolean, default: true }
+        user_data_cloud_init: { type: ["string", "null"] }
+
+paths:
+  # 1. Authentication API
+  /api/v1/auth/register:
+    post:
+      tags: [01_Authentication]
+      summary: Register a new standalone CloudScanr user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, display_name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 12 }
+                display_name: { type: string }
+      responses:
+        "201": { description: Account created and verification email queued }
+        "409": { description: Email already registered }
+  /api/v1/auth/verify-email:
+    post:
+      tags: [01_Authentication]
+      summary: Verify user email ownership token
+      operationId: verifyEmail
+      responses:
+        "200": { description: Email verified }
+  /api/v1/auth/login:
+    post:
+      tags: [01_Authentication]
+      summary: Authenticate with email and Argon2id password
+      operationId: loginUser
+      responses:
+        "200": { description: Authenticated or MFA challenge required }
+  /api/v1/auth/mfa/verify:
+    post:
+      tags: [01_Authentication]
+      summary: Verify TOTP or WebAuthn Passkey for login or step-up authorization
+      operationId: verifyMFA
+      responses:
+        "200": { description: Step-up MFA token issued }
+  /api/v1/auth/logout:
+    post:
+      tags: [01_Authentication]
+      security: [{ BearerAuth: [] }]
+      summary: Revoke active session and refresh token family
+      operationId: logoutUser
+      responses:
+        "204": { description: Session revoked }
+
+  # 2. Users API
+  /api/v1/users/me:
+    get:
+      tags: [02_Users]
+      security: [{ BearerAuth: [] }]
+      summary: Retrieve current user profile, preferences, and organization memberships
+      operationId: getCurrentUser
+      responses:
+        "200": { description: User profile returned }
+    patch:
+      tags: [02_Users]
+      security: [{ BearerAuth: [] }]
+      summary: Update locale, currency, and profile settings
+      operationId: updateCurrentUser
+      responses:
+        "200": { description: Profile updated }
+    delete:
+      tags: [02_Users]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      summary: Initiate account deletion and disconnect BYOC tokens
+      operationId: deleteCurrentUser
+      responses:
+        "202": { description: Account scheduled for deletion and tokens wiped }
+  /api/v1/users/me/export:
+    post:
+      tags: [02_Users]
+      security: [{ BearerAuth: [] }]
+      summary: Export all personal user data (GDPR/PIPA compliance)
+      operationId: exportUserData
+      responses:
+        "200": { description: JSON archive returned }
+
+  # 3. Organizations API
+  /api/v1/orgs:
+    get:
+      tags: [03_Organizations]
+      security: [{ BearerAuth: [] }]
+      summary: List organizations the user belongs to
+      operationId: listOrganizations
+      responses:
+        "200": { description: Organizations list }
+    post:
+      tags: [03_Organizations]
+      security: [{ BearerAuth: [] }]
+      summary: Create a new tenant organization
+      operationId: createOrganization
+      responses:
+        "201": { description: Organization created }
+  /api/v1/orgs/{org_id}/members:
+    get:
+      tags: [03_Organizations]
+      security: [{ BearerAuth: [] }]
+      summary: List organization members and RBAC permissions
+      operationId: listOrgMembers
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Member list }
+    post:
+      tags: [03_Organizations]
+      security: [{ BearerAuth: [] }]
+      summary: Invite a member and assign RBAC role (Owner/Admin/Operator/Viewer)
+      operationId: inviteOrgMember
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "201": { description: Member invited }
+
+  # 4. Providers API
+  /api/v1/providers:
+    get:
+      tags: [04_Providers]
+      summary: List all cloud providers with verification statuses and capability summaries
+      operationId: listProviders
+      responses:
+        "200": { description: Providers list }
+  /api/v1/providers/{slug}:
+    get:
+      tags: [04_Providers]
+      summary: Get detailed provider profile, regions, API capabilities, and reviews
+      operationId: getProviderBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Provider detail }
+
+  # 5. Cloud Catalog API
+  /api/v1/catalog/categories:
+    get:
+      tags: [05_Cloud_Catalog]
+      summary: List all 16 infrastructure categories and SKU counts
+      operationId: listCatalogCategories
+      responses:
+        "200": { description: Category taxonomy }
+  /api/v1/catalog/skus:
+    get:
+      tags: [05_Cloud_Catalog]
+      summary: List normalized cloud SKUs with specs and latest price snapshots
+      operationId: listCatalogSKUs
+      responses:
+        "200": { description: Paginated SKU list }
+  /api/v1/catalog/skus/{sku_id}:
+    get:
+      tags: [05_Cloud_Catalog]
+      summary: Get full 36-field SKU specification, historical price chart, and official source link
+      operationId: getSKUDetail
+      parameters:
+        - name: sku_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: SKU detail }
+
+  # 6. Pricing API
+  /api/v1/pricing/estimate:
+    post:
+      tags: [06_Pricing]
+      summary: Calculate itemized TCO across usage hours (730h/calendar), egress, IPv4, backups, FX & tax
+      operationId: calculateTCOEstimate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TCOEstimateRequest"
+      responses:
+        "200": { description: Itemized raw vs estimated TCO breakdown }
+  /api/v1/pricing/fx-rates:
+    get:
+      tags: [06_Pricing]
+      summary: Get active multi-currency exchange rates and collection timestamps
+      operationId: getFXRates
+      responses:
+        "200": { description: FX rate table }
+
+  # 7. Comparison API
+  /api/v1/comparisons:
+    post:
+      tags: [07_Comparison]
+      summary: Create or save a side-by-side multi-SKU comparison matrix
+      operationId: createComparisonList
+      responses:
+        "201": { description: Comparison matrix created with share_slug }
+  /api/v1/comparisons/{share_slug}:
+    get:
+      tags: [07_Comparison]
+      summary: Retrieve a saved comparison matrix with live normalized TCO
+      operationId: getComparisonBySlug
+      parameters:
+        - name: share_slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Side-by-side comparison payload }
+
+  # 8. Search API
+  /api/v1/search/skus:
+    get:
+      tags: [08_Search]
+      summary: Execute faceted OpenSearch query + natural language spec parsing
+      operationId: searchSKUs
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: "Natural language spec query (e.g. '4 vcpu 16gb nvme frankfurt under $40')"
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: min_vcpu
+          in: query
+          schema: { type: integer }
+        - name: min_ram_gb
+          in: query
+          schema: { type: integer }
+        - name: gpu_model
+          in: query
+          schema: { type: string }
+        - name: max_monthly_usd
+          in: query
+          schema: { type: number }
+      responses:
+        "200": { description: Matching SKUs, parsed filter chips, and facet buckets }
+  /api/v1/rankings/best-value:
+    get:
+      tags: [08_Search]
+      summary: Get unbiased Best-Value leaderboard per workload preset
+      operationId: getBestValueRankings
+      responses:
+        "200": { description: Ranked SKUs with transparent score components }
+
+  # 9. Promotions API
+  /api/v1/promotions:
+    get:
+      tags: [09_Promotions]
+      summary: List verified cloud free-trial credits and promotional coupons
+      operationId: listPromotions
+      responses:
+        "200": { description: Active promotions list }
+
+  # 10. Affiliate API
+  /api/v1/affiliate/disclosure:
+    get:
+      tags: [10_Affiliate]
+      summary: Retrieve transparent affiliate program relationships and editorial policy
+      operationId: getAffiliateDisclosure
+      responses:
+        "200": { description: Disclosure metadata }
+
+  # 11. Tracking API
+  /go/{slug}:
+    get:
+      tags: [11_Tracking]
+      summary: High-speed affiliate redirect router with signed ClickID/SubID injection
+      operationId: redirectAffiliateLink
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "302": { description: Redirect to verified affiliate network tracking URL }
+  /api/v1/webhooks/affiliate/{network}:
+    post:
+      tags: [11_Tracking]
+      summary: Ingest HMAC-verified conversion postbacks from Impact, CJ, PartnerStack, or HasOffers
+      operationId: ingestAffiliatePostback
+      parameters:
+        - name: network
+          in: path
+          required: true
+          schema: { type: string, enum: [impact, cj, partnerstack, hasoffers] }
+      responses:
+        "200": { description: Conversion reconciled idempotently }
+
+  # 12. Cloud Connection API (BYOC)
+  /api/v1/cloud/connections:
+    get:
+      tags: [12_Cloud_Connection]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: List connected BYOC cloud accounts for the active organization
+      operationId: listCloudConnections
+      responses:
+        "200": { description: Tenant-isolated connections list }
+    post:
+      tags: [12_Cloud_Connection]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      summary: Connect a user-owned cloud account (OAuth2 code or scoped API token encrypted via KMS)
+      operationId: createCloudConnection
+      responses:
+        "201": { description: Connection verified and encrypted with KMS DEK+AAD }
+  /api/v1/cloud/connections/{connection_id}:
+    delete:
+      tags: [12_Cloud_Connection]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - name: connection_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Disconnect BYOC account and cryptographically shred stored token ciphertext
+      operationId: disconnectCloudAccount
+      responses:
+        "204": { description: Account disconnected and credentials wiped }
+
+  # 13. Server Provisioning API
+  /api/v1/cloud/approvals:
+    post:
+      tags: [13_Server_Provisioning]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      summary: Sign an explicit 5-minute Cost or Destructive Operation Approval token
+      operationId: createOperationApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CostApprovalRequest"
+      responses:
+        "201": { description: Signed approval_id issued }
+  /api/v1/cloud/servers:
+    post:
+      tags: [13_Server_Provisioning]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      summary: Provision a new cloud server using a verified Cost Approval token
+      operationId: provisionServer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServerRequest"
+      responses:
+        "202": { description: Idempotent provisioning job queued }
+        "402": { description: Blocked by organization budget policy }
+        "403": { description: Missing cost approval or read-only token }
+
+  # 14. Server Management API
+  /api/v1/cloud/servers/inventory:
+    get:
+      tags: [14_Server_Management]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: List all BYOC servers across connected providers for the organization
+      operationId: listServers
+      responses:
+        "200": { description: Unified multi-cloud server inventory }
+  /api/v1/cloud/servers/{server_id}:
+    get:
+      tags: [14_Server_Management]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - name: server_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Get server status, IPs, specs, metrics, backups, and operation history
+      operationId: getServerDetail
+      responses:
+        "200": { description: Server detail }
+    delete:
+      tags: [14_Server_Management]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: server_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: approval_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Permanently delete a cloud server (Requires destructive approval_id + Step-Up MFA)
+      operationId: deleteServer
+      responses:
+        "202": { description: Server deletion job queued }
+  /api/v1/cloud/servers/{server_id}/actions:
+    post:
+      tags: [14_Server_Management]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: server_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Execute Day-2 action (power_on, shutdown, reboot, power_cycle, resize, snapshot, backup)
+      operationId: executeServerAction
+      responses:
+        "202": { description: Action queued }
+
+  # 15. Budget API
+  /api/v1/cloud/budgets:
+    get:
+      tags: [15_Budget]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: List organization budget policies and alert thresholds
+      operationId: listBudgetPolicies
+      responses:
+        "200": { description: Budget policies }
+    post:
+      tags: [15_Budget]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: Create or update a monthly spend cap and provisioning hard-block policy
+      operationId: createBudgetPolicy
+      responses:
+        "201": { description: Budget policy saved }
+
+  # 16. Cloud Cost API
+  /api/v1/cloud/costs/summary:
+    get:
+      tags: [16_Cloud_Cost]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: Get current hourly burn rate, month-to-date accrued spend, and month-end forecast
+      operationId: getCloudCostSummary
+      responses:
+        "200": { description: Multi-cloud cost summary }
+
+  # 17. Price Alert API
+  /api/v1/price-alerts:
+    get:
+      tags: [17_Price_Alert]
+      security: [{ BearerAuth: [] }]
+      summary: List user's active price-drop alert subscriptions
+      operationId: listPriceAlerts
+      responses:
+        "200": { description: Price alerts list }
+    post:
+      tags: [17_Price_Alert]
+      security: [{ BearerAuth: [] }]
+      summary: Create a price-drop alert on a specific SKU or spec filter
+      operationId: createPriceAlert
+      responses:
+        "201": { description: Alert created }
+
+  # 18. Analytics API
+  /api/v1/analytics/affiliate-yield:
+    get:
+      tags: [18_Analytics]
+      security: [{ BearerAuth: [] }]
+      summary: Retrieve EPC, CVR, Clicks, Approved Cash Commissions, and Hosting Credits
+      operationId: getAffiliateYieldAnalytics
+      responses:
+        "200": { description: Yield analytics report }
+
+  # 19. Admin API
+  /api/v1/admin/pricing/quarantine:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      summary: List quarantined price sync anomalies awaiting Catalog Admin review
+      operationId: listPricingQuarantine
+      responses:
+        "200": { description: Quarantined sync jobs }
+  /api/v1/admin/affiliate/reconcile-csv:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      summary: Upload and reconcile an affiliate network conversion/commission CSV export
+      operationId: reconcileAffiliateCSV
+      responses:
+        "200": { description: Reconciliation report }
+
+  # 20. Content API
+  /api/v1/content/articles:
+    get:
+      tags: [20_Content]
+      summary: List published tutorials, benchmark reports, and comparison guides
+      operationId: listArticles
+      responses:
+        "200": { description: Articles list }
+  /api/v1/content/reviews:
+    post:
+      tags: [20_Content]
+      security: [{ BearerAuth: [] }]
+      summary: Submit a verified provider review (flagged with BYOC customer verification badge)
+      operationId: createProviderReview
+      responses:
+        "201": { description: Review submitted for moderation }
+
+  # 21. Audit API
+  /api/v1/audit-logs:
+    get:
+      tags: [21_Audit]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
+      summary: Query tamper-evident hash-chained security and server operation audit logs
+      operationId: listAuditLogs
+      responses:
+        "200": { description: Audit log entries with hash chain verification }
+
+  # 22. Notifications API
+  /api/v1/notifications:
+    get:
+      tags: [22_Notifications]
+      security: [{ BearerAuth: [] }]
+      summary: List user notifications (price drops, server provisioning completion, budget warnings)
+      operationId: listNotifications
+      responses:
+        "200": { description: Notifications list }

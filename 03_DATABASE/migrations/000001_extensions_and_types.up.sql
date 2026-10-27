@@ -1,0 +1,58 @@
+-- Migration 000001: Extensions, Custom Enums, and Helper Functions
+-- CloudScanr Standalone PostgreSQL 16 Schema (Zero TreeScan Dependency)
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "btree_gist";
+
+CREATE TYPE verification_status_enum AS ENUM (
+    'VERIFIED',
+    'REQUIRES_APPLICATION',
+    'CONTRACT_REQUIRED',
+    'DOCUMENTATION_UNAVAILABLE',
+    'REGION_RESTRICTED',
+    'NOT_SUPPORTED',
+    'NOT_VERIFIED'
+);
+
+CREATE TYPE product_category_enum AS ENUM (
+    'VPS',
+    'SHARED_CPU_VM',
+    'DEDICATED_CPU_VM',
+    'GPU_SERVER',
+    'BARE_METAL',
+    'OBJECT_STORAGE',
+    'BLOCK_STORAGE',
+    'MANAGED_DATABASE',
+    'KUBERNETES',
+    'LOAD_BALANCER',
+    'CDN',
+    'BACKUP',
+    'MANAGED_HOSTING',
+    'WORDPRESS_HOSTING',
+    'DEVELOPER_HOSTING',
+    'AI_INFRASTRUCTURE'
+);
+
+CREATE TYPE freshness_status_enum AS ENUM ('FRESH', 'STALE', 'QUARANTINED', 'UNVERIFIED');
+CREATE TYPE reward_type_enum AS ENUM ('CASH_COMMISSION', 'HOSTING_CREDIT');
+CREATE TYPE operation_status_enum AS ENUM (
+    'DRAFT',
+    'AWAITING_COST_APPROVAL',
+    'APPROVED_QUEUED',
+    'PREFLIGHT_VERIFYING',
+    'DISPATCHING_TO_PROVIDER',
+    'POLLING_ACTIVE',
+    'TIMEOUT_RECONCILING',
+    'SUCCEEDED',
+    'FAILED_SAFE',
+    'CANCELLED'
+);
+
+CREATE OR REPLACE FUNCTION trigger_set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

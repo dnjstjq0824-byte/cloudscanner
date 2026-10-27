@@ -1,0 +1,11 @@
+module github.com/cloudscanr/cloudscanr
+
+go 1.27.0
+
+require (
+	github.com/shopspring/decimal v1.6.0
+	github.com/sony/gobreaker v1.0.0
+	github.com/stretchr/testify v1.12.1
+)
+
+require go.yaml.in/yaml/v3 v3.0.5 // indirect

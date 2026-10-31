@@ -18,6 +18,7 @@ import (
 	"github.com/cloudscanr/cloudscanr/internal/domain/affiliate"
 	"github.com/cloudscanr/cloudscanr/internal/domain/catalog"
 	"github.com/cloudscanr/cloudscanr/internal/domain/identity"
+	"github.com/cloudscanr/cloudscanr/internal/domain/management"
 	"github.com/cloudscanr/cloudscanr/internal/domain/search"
 	"github.com/cloudscanr/cloudscanr/internal/platform"
 	"github.com/cloudscanr/cloudscanr/internal/platform/core"
@@ -84,7 +85,14 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	mux.HandleFunc("/api/v1/affiliate/disclosure", affiliate.DisclosureHandler(affiliateSvc))
 	mux.HandleFunc("/api/v1/webhooks/affiliate/", affiliate.WebhookHandler(affiliateSvc))
 
-	// 6. Pricing Adapter Registry
+	// 6. BYOC Multi-Cloud Management Domain
+	mgmtSvc := management.NewService(nil, nil)
+	mgmtHandler := management.NewHandler(mgmtSvc)
+	mux.HandleFunc("/api/v1/cloud/connections", mgmtHandler.ConnectionsHandler)
+	mux.HandleFunc("/api/v1/cloud/connections/", mgmtHandler.SingleConnectionHandler)
+	mux.HandleFunc("/api/v1/cloud/approvals", mgmtHandler.ApprovalsHandler)
+
+	// 7. Pricing Adapter Registry
 	pricingReg := pricing.NewRegistry()
 	_ = pricingReg.Register(aws.NewAdapter(nil, "us-east-1"))
 	_ = pricingReg.Register(digitalocean.NewAdapter(nil, ""))

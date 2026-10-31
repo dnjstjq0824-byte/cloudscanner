@@ -135,4 +135,67 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recLogin.Code)
 		assert.Contains(t, recLogin.Body.String(), "token")
 	})
+
+	// 7. BYOC Cloud Management and Cost Approvals
+	t.Run("BYOC Cloud Management and Cost Approvals", func(t *testing.T) {
+		orgID := "org_byoc_test_01"
+		connBody := `{
+			"provider_id": "01930000-0001-7000-8000-000000000001",
+			"provider_slug": "digitalocean",
+			"connection_name": "Test DO Production",
+			"auth_mode": "SCOPED_API_TOKEN",
+			"access_level": "READ_WRITE",
+			"raw_api_token": "dop_v1_secret_token_live",
+			"granted_scopes": ["read", "write"]
+		}`
+		reqConn := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/connections", bytes.NewBufferString(connBody))
+		reqConn.Header.Set("X-Organization-Id", orgID)
+		reqConn.Header.Set("Content-Type", "application/json")
+		recConn := httptest.NewRecorder()
+		router.ServeHTTP(recConn, reqConn)
+
+		assert.Equal(t, http.StatusCreated, recConn.Code)
+		var connResp struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recConn.Body).Decode(&connResp))
+		connID := connResp.Data.ID
+		assert.NotEmpty(t, connID)
+
+		// List connections
+		reqList := httptest.NewRequest(http.MethodGet, "/api/v1/cloud/connections", nil)
+		reqList.Header.Set("X-Organization-Id", orgID)
+		recList := httptest.NewRecorder()
+		router.ServeHTTP(recList, reqList)
+		assert.Equal(t, http.StatusOK, recList.Code)
+		assert.Contains(t, recList.Body.String(), "Test DO Production")
+
+		// Create explicit operation approval
+		approvalBody := `{
+			"connection_id": "` + connID + `",
+			"operation_type": "CREATE_SERVER",
+			"estimated_hourly_cost_usd": 0.0357,
+			"estimated_monthly_cost_usd": 24.00,
+			"step_up_mfa_verified": true,
+			"duration_minutes": 15
+		}`
+		reqApp := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/approvals", bytes.NewBufferString(approvalBody))
+		reqApp.Header.Set("X-Organization-Id", orgID)
+		reqApp.Header.Set("Content-Type", "application/json")
+		recApp := httptest.NewRecorder()
+		router.ServeHTTP(recApp, reqApp)
+
+		assert.Equal(t, http.StatusCreated, recApp.Code)
+		assert.Contains(t, recApp.Body.String(), "approval_signature_hmac")
+
+		// Disconnect connection
+		reqDel := httptest.NewRequest(http.MethodDelete, "/api/v1/cloud/connections/"+connID, nil)
+		reqDel.Header.Set("X-Organization-Id", orgID)
+		recDel := httptest.NewRecorder()
+		router.ServeHTTP(recDel, reqDel)
+		assert.Equal(t, http.StatusOK, recDel.Code)
+		assert.Contains(t, recDel.Body.String(), "disconnected")
+	})
 }

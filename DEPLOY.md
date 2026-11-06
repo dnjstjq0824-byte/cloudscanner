@@ -12,7 +12,7 @@ Create a Pages project from this repository with these **Build settings**:
 |---|---|
 | Framework preset | Nuxt |
 | Root directory | _(repo root; leave empty)_ |
-| Build command | `pnpm --dir web install --frozen-lockfile && pnpm --dir web build` |
+| Build command | `npx -y pnpm@9.15.0 --dir web install --frozen-lockfile && npx -y pnpm@9.15.0 --dir web build` |
 | Build output directory | `web/dist` |
 | Node.js version | 24 (set `NODE_VERSION=24` or via dashboard) |
 

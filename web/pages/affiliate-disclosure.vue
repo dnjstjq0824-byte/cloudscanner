@@ -53,4 +53,12 @@
 definePageMeta({
   layout: 'public'
 })
+
+useHead({
+  title: 'Affiliate & Editorial Independence Disclosure',
+  meta: [
+    { name: 'description', content: 'FTC and KFTC affiliate disclosure: how CloudScanr earns commissions while keeping rankings strictly algorithmic.' },
+  ],
+})
 </script>
+

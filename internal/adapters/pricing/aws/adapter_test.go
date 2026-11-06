@@ -35,3 +35,4 @@ func TestAWS_PricingAdapter(t *testing.T) {
 	}
 	assert.True(t, found, "t4g.nano must be present in parsed offers")
 }
+

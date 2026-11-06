@@ -11,20 +11,40 @@
     </div>
 
     <!-- Category Tabs -->
-    <div class="flex space-x-2 border-b border-slate-800 pb-2 text-xs font-semibold">
+    <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-2 text-xs font-semibold">
       <button
-        v-for="cat in ['VPS', 'Dedicated CPU', 'High RAM']"
-        :key="cat"
+        v-for="cat in categoryTabs"
+        :key="cat.value"
         class="px-4 py-2 rounded-lg transition"
-        :class="activeCat === cat ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-white bg-slate-900'"
-        @click="activeCat = cat"
+        :class="activeCat === cat.value ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-white bg-slate-900'"
+        @click="activeCat = cat.value; loadRankings()"
       >
-        {{ cat }}
+        {{ cat.label }}
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="rounded-xl border border-slate-800 overflow-hidden" aria-busy="true" aria-label="Loading rankings">
+      <div v-for="n in 6" :key="n" class="p-4 bg-slate-900 border-b border-slate-800 animate-pulse">
+        <div class="h-4 w-2/3 rounded bg-slate-800" />
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="text-center py-16 bg-red-950/20 rounded-xl border border-red-900 space-y-3">
+      <div class="text-3xl">⚠️</div>
+      <h4 class="text-base font-bold text-white">{{ error.title }}</h4>
+      <p class="text-xs text-slate-400 max-w-sm mx-auto">{{ error.message }}</p>
+      <button
+        class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition"
+        @click="loadRankings"
+      >
+        Retry
       </button>
     </div>
 
     <!-- Leaderboard Table -->
-    <div class="overflow-x-auto rounded-xl border border-slate-800">
+    <div v-else-if="leaderboard.length > 0" class="overflow-x-auto rounded-xl border border-slate-800">
       <table class="w-full text-left text-xs bg-slate-900 divide-y divide-slate-800">
         <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider">
           <tr>
@@ -37,7 +57,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800 text-slate-300 tabular-nums">
-          <tr v-for="(item, idx) in leaderboard" :key="item.plan" class="hover:bg-slate-800/40 transition">
+          <tr v-for="(item, idx) in leaderboard" :key="item.id" class="hover:bg-slate-800/40 transition">
             <td class="py-4 px-4 text-center font-extrabold text-sm">
               <span v-if="idx === 0">🥇</span>
               <span v-else-if="idx === 1">🥈</span>
@@ -46,54 +66,94 @@
             </td>
             <td class="py-4 px-4 font-bold text-white">
               <div class="flex items-center space-x-2">
-                <span>{{ item.provider }}</span>
-                <span class="text-slate-400 font-normal">({{ item.plan }})</span>
+                <span>{{ item.provider_name }}</span>
+                <span class="text-slate-400 font-normal">({{ item.plan_code }})</span>
               </div>
             </td>
             <td class="py-4 px-4">
-              {{ item.vcpu }} vCPU • {{ item.ram }} GB RAM • {{ item.disk }} GB {{ item.diskType }}
+              {{ item.vcpu }} vCPU • {{ (item.ram_mb / 1024).toFixed(1) }} GB RAM • {{ item.disk_gb }} GB {{ item.disk_type }}
             </td>
             <td class="py-4 px-4 font-bold text-white">
-              ${{ item.price.toFixed(2) }}/mo
+              ${{ item.tco_result.subtotal_usd.toFixed(2) }}/mo
             </td>
             <td class="py-4 px-4 text-center">
               <span class="px-2.5 py-1 rounded-full font-bold bg-sky-950 text-sky-400 border border-sky-800 text-xs">
-                {{ item.score.toFixed(2) }}
+                {{ item.best_value_score.toFixed(2) }}
               </span>
             </td>
             <td class="py-4 px-4 text-center">
-              <NuxtLink
-                :to="`/go/${item.slug}?src=ranking_table`"
+              <a
+                :href="dealUrl(item.provider_slug)"
                 class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-semibold text-[11px] transition shadow"
               >
                 Inspect
-              </NuxtLink>
+              </a>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Empty -->
+    <div v-else class="text-center py-16 bg-slate-900/40 rounded-xl border border-slate-800 space-y-3">
+      <div class="text-3xl">🏆</div>
+      <h4 class="text-base font-bold text-white">No ranked instances in this category yet</h4>
+      <p class="text-xs text-slate-400 max-w-sm mx-auto">The catalog sync may still be running. Check back shortly.</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
+import { ApiError, useApi } from '~/composables/useApi'
+import type { ListEnvelope, SearchResultItem } from '~/types/api'
 
 definePageMeta({
-  layout: 'public'
+  layout: 'public',
 })
 
-const activeCat = ref('VPS')
+useHead({
+  title: 'Best Value Cloud Rankings',
+  meta: [
+    { name: 'description', content: 'Algorithmic best-value cloud server rankings. Mathematical TCO scoring with zero pay-for-placement.' },
+  ],
+})
 
-const leaderboard = computed(() => {
-  return [
-    { rank: 1, provider: 'Hetzner', plan: 'CPX21', slug: 'hetzner', vcpu: 3, ram: 4, disk: 80, diskType: 'NVMe', price: 8.95, score: 9.45 },
-    { rank: 2, provider: 'Hetzner', plan: 'CPX11', slug: 'hetzner', vcpu: 2, ram: 2, disk: 40, diskType: 'NVMe', price: 4.95, score: 8.92 },
-    { rank: 3, provider: 'Vultr', plan: 'vc2-2c-4gb', slug: 'vultr', vcpu: 2, ram: 4, disk: 80, diskType: 'NVMe', price: 20.00, score: 5.80 },
-    { rank: 4, provider: 'UpCloud', plan: '2xCPU-4GB', slug: 'upcloud', vcpu: 2, ram: 4, disk: 80, diskType: 'MaxIOPS', price: 20.00, score: 5.80 },
-    { rank: 5, provider: 'DigitalOcean', plan: 's-2vcpu-4gb', slug: 'digitalocean', vcpu: 2, ram: 4, disk: 80, diskType: 'NVMe', price: 24.00, score: 5.67 },
-    { rank: 6, provider: 'DigitalOcean', plan: 's-1vcpu-1gb', slug: 'digitalocean', vcpu: 1, ram: 1, disk: 25, diskType: 'NVMe', price: 6.00, score: 3.42 },
-    { rank: 7, provider: 'AWS EC2', plan: 't4g.small', slug: 'aws', vcpu: 2, ram: 2, disk: 40, diskType: 'EBS', price: 15.91, score: 3.10 },
-  ]
+const categoryTabs = [
+  { value: '', label: 'All Categories' },
+  { value: 'VPS', label: 'VPS' },
+  { value: 'DEDICATED_CPU_VM', label: 'Dedicated CPU' },
+  { value: 'GPU_SERVER', label: 'GPU' },
+]
+
+const activeCat = ref('')
+const loading = ref(false)
+const error = ref<ApiError | null>(null)
+const leaderboard = ref<SearchResultItem[]>([])
+
+const { request, baseURL } = useApi()
+
+function dealUrl(slug: string): string {
+  return `${baseURL}/go/${slug}?src=ranking_table`
+}
+
+async function loadRankings() {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await request<ListEnvelope<SearchResultItem>>('/api/v1/rankings/best-value', {
+      query: { category: activeCat.value || undefined, limit: 20 },
+    })
+    leaderboard.value = res.data ?? []
+  } catch (e) {
+    error.value = e instanceof ApiError ? e : ApiError.fromUnknown(e)
+    leaderboard.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadRankings()
 })
 </script>

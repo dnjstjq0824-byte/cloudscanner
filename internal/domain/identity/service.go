@@ -50,6 +50,7 @@ type UserStore interface {
 	CreateUser(ctx context.Context, u *User, orgName string) (*User, *Organization, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
+	FindOrgByOwner(ctx context.Context, userID string) (*Organization, string, error)
 }
 
 // MemoryUserStore provides an in-memory thread-safe user repository.
@@ -119,6 +120,17 @@ func (s *MemoryUserStore) FindByID(ctx context.Context, id string) (*User, error
 		return nil, errors.New("user not found")
 	}
 	return u, nil
+}
+
+func (s *MemoryUserStore) FindOrgByOwner(ctx context.Context, userID string) (*Organization, string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, org := range s.orgs {
+		if org.OwnerUserID == userID {
+			return org, RoleOwner, nil
+		}
+	}
+	return nil, "", errors.New("organization not found for user")
 }
 
 // HashPassword encodes a raw password with Argon2id.
@@ -234,6 +246,11 @@ func (s *Service) Register(ctx context.Context, email, password, fullName string
 	}
 
 	return s.store.CreateUser(ctx, user, orgName)
+}
+
+// DefaultOrgForUser returns the user's primary organization and role.
+func (s *Service) DefaultOrgForUser(ctx context.Context, userID string) (*Organization, string, error) {
+	return s.store.FindOrgByOwner(ctx, userID)
 }
 
 // Authenticate verifies credentials and returns user on success.

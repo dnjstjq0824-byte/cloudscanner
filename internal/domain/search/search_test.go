@@ -75,3 +75,4 @@ func TestSearch_ExecutionAndFacets(t *testing.T) {
 			"Rankings should be sorted descending by best value score")
 	}
 }
+

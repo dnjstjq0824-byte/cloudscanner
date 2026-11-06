@@ -51,3 +51,4 @@ func TestVultr_PricingAdapter(t *testing.T) {
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(defaultPayload.RawItems), 2)
 }
+

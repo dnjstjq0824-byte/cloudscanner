@@ -461,3 +461,4 @@ func (s *Service) GetClickByULID(ulid string) (*ClickEvent, bool) {
 	c, exists := s.clicks[ulid]
 	return c, exists
 }
+

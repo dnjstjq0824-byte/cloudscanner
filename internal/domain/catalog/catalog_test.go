@@ -87,3 +87,4 @@ func TestCatalog_ProvidersAndSKUs(t *testing.T) {
 	assert.Equal(t, 2, skuDetailRes.Data.VCPU)
 	assert.Equal(t, int64(4096), skuDetailRes.Data.RAMMB)
 }
+

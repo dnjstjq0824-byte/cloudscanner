@@ -99,10 +99,27 @@
     <div class="space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-bold text-white">Scenario: 2 vCPU, 4GB RAM Workload Comparison</h2>
-        <span class="text-xs text-slate-500">* All prices calculated mathematically using active provider rate cards</span>
+        <span class="text-xs text-slate-500">* Server-side TCO using active provider rate cards</span>
       </div>
 
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
+      <div v-if="loading && comparisonRows.length === 0" class="rounded-xl border border-slate-800 overflow-hidden" aria-busy="true" aria-label="Calculating TCO">
+        <div v-for="n in 5" :key="n" class="p-4 bg-slate-900 border-b border-slate-800 animate-pulse">
+          <div class="h-4 w-3/4 rounded bg-slate-800" />
+        </div>
+      </div>
+
+      <div v-else-if="error" class="text-center py-12 bg-red-950/20 rounded-xl border border-red-900 space-y-3">
+        <h4 class="text-base font-bold text-white">{{ error.title }}</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">{{ error.message }}</p>
+        <button
+          class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition"
+          @click="recalculate"
+        >
+          Retry Calculation
+        </button>
+      </div>
+
+      <div v-else class="overflow-x-auto rounded-xl border border-slate-800">
         <table class="w-full text-left text-xs bg-slate-900 divide-y divide-slate-800">
           <thead class="bg-slate-950/80 text-slate-400 font-semibold uppercase tracking-wider">
             <tr>
@@ -122,10 +139,10 @@
               class="hover:bg-slate-800/40 transition"
               :class="{ 'bg-sky-950/20': row.isBestValue }"
             >
-              <td class="py-4 px-4 font-bold text-white flex items-center space-x-2">
+              <td class="py-4 px-4 font-bold text-white">
                 <span>{{ row.provider }}</span>
-                <span class="text-[10px] font-normal text-slate-400">({{ row.plan }})</span>
-                <span v-if="row.isBestValue" class="px-1.5 py-0.2 rounded text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800">
+                <span class="text-[10px] font-normal text-slate-400"> ({{ row.plan }})</span>
+                <span v-if="row.isBestValue" class="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800">
                   Best Value
                 </span>
               </td>
@@ -155,15 +172,15 @@
                 ${{ row.backupUSD.toFixed(2) }}
               </td>
               <td class="py-4 px-4 text-right font-extrabold text-sm text-white">
-                {{ formatCurrency(row.totalUSD) }}
+                {{ formatTotal(row.totalTarget) }}
               </td>
               <td class="py-4 px-4 text-center">
-                <NuxtLink
-                  :to="`/go/${row.slug}?src=calculator_matrix`"
+                <a
+                  :href="dealUrl(row.slug)"
                   class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-semibold text-[11px] transition"
                 >
                   Deploy
-                </NuxtLink>
+                </a>
               </td>
             </tr>
           </tbody>
@@ -174,11 +191,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { ApiError, useApi } from '~/composables/useApi'
+import type { ListEnvelope, SKUDetail, TCOResult } from '~/types/api'
 
 definePageMeta({
-  layout: 'public'
+  layout: 'public',
 })
+
+useHead({
+  title: 'TCO Calculator',
+  meta: [
+    { name: 'description', content: 'Transparent total-cost-of-ownership calculator: hourly caps, IPv4 surcharges, egress overages, and backups across 5 providers.' },
+  ],
+})
+
+interface CalcRow {
+  provider: string
+  plan: string
+  slug: string
+  computeUSD: number
+  capped: boolean
+  ipv4USD: number
+  egressUSD: number
+  freeTB: number
+  backupUSD: number
+  totalUSD: number
+  totalTarget: number
+  isBestValue: boolean
+}
 
 const hours = ref(730)
 const egressGB = ref(1000)
@@ -192,124 +233,105 @@ const fxRates: Record<string, number> = {
   EUR: 0.92,
 }
 
-function formatCurrency(usd: number): string {
-  const rate = fxRates[currency.value] || 1.0
-  const converted = usd * rate
-  if (currency.value === 'KRW') {
-    return '₩' + Math.round(converted).toLocaleString()
-  } else if (currency.value === 'EUR') {
-    return '€' + converted.toFixed(2)
-  }
-  return '$' + converted.toFixed(2)
+// Canonical 2C/4G comparison set resolved against the live catalog.
+const comparisonPlans = [
+  { planCode: 's-2vcpu-4gb', provider: 'DigitalOcean' },
+  { planCode: 'cpx21', provider: 'Hetzner Cloud' },
+  { planCode: 'vc2-2c-4gb', provider: 'Vultr' },
+  { planCode: 't3.medium', provider: 'AWS EC2' },
+  { planCode: '2xCPU-4GB', provider: 'UpCloud' },
+]
+
+const loading = ref(false)
+const error = ref<ApiError | null>(null)
+const comparisonRows = ref<CalcRow[]>([])
+const catalogSkus = ref<SKUDetail[]>([])
+
+const { request, baseURL } = useApi()
+
+function dealUrl(slug: string): string {
+  return `${baseURL}/go/${slug}?src=calculator_matrix`
 }
 
-const comparisonRows = computed(() => {
-  // 1. DigitalOcean (s-2vcpu-4gb): $24/mo cap, $0.0357/hr, 4TB egress free, IPv4 included, 20% backup
-  const doCompute = Math.min(24.00, hours.value * 0.0357)
-  const doIPv4 = extraIPv4.value * 4.00
-  const doOverageGB = Math.max(0, egressGB.value - 4000)
-  const doEgress = doOverageGB * 0.01
-  const doBackup = includeBackups.value ? doCompute * 0.20 : 0
-  const doTotal = doCompute + doIPv4 + doEgress + doBackup
+function formatTotal(target: number): string {
+  if (currency.value === 'KRW') {
+    return '₩' + Math.round(target).toLocaleString()
+  } else if (currency.value === 'EUR') {
+    return '€' + target.toFixed(2)
+  }
+  return '$' + target.toFixed(2)
+}
 
-  // 2. Hetzner Cloud (CPX21): €8.95 (~$9.70) cap, $0.0134/hr, 20TB egress free, IPv4 included, 20% backup
-  const hzCompute = Math.min(9.70, hours.value * 0.0134)
-  const hzIPv4 = extraIPv4.value * 2.20
-  const hzOverageGB = Math.max(0, egressGB.value - 20000)
-  const hzEgress = hzOverageGB * 0.012
-  const hzBackup = includeBackups.value ? hzCompute * 0.20 : 0
-  const hzTotal = hzCompute + hzIPv4 + hzEgress + hzBackup
+let debounce: ReturnType<typeof setTimeout> | null = null
 
-  // 3. Vultr (vc2-2c-4gb): $20/mo cap, $0.0298/hr, 3TB egress free, IPv4 included, 20% backup
-  const vultrCompute = Math.min(20.00, hours.value * 0.0298)
-  const vultrIPv4 = extraIPv4.value * 3.00
-  const vultrOverageGB = Math.max(0, egressGB.value - 3000)
-  const vultrEgress = vultrOverageGB * 0.01
-  const vultrBackup = includeBackups.value ? vultrCompute * 0.20 : 0
-  const vultrTotal = vultrCompute + vultrIPv4 + vultrEgress + vultrBackup
+async function recalculate() {
+  loading.value = true
+  error.value = null
+  try {
+    if (catalogSkus.value.length === 0) {
+      const list = await request<ListEnvelope<SKUDetail>>('/api/v1/catalog/skus', { query: { category: 'VPS' } })
+      catalogSkus.value = list.data ?? []
+    }
+    const byPlan = new Map(catalogSkus.value.map((s) => [s.plan_code, s]))
+    const scenario = {
+      usage_hours: hours.value,
+      required_ipv4_count: 1 + extraIPv4.value,
+      estimated_egress_gb: egressGB.value,
+      enable_backups: includeBackups.value,
+      snapshot_storage_gb: 0,
+      target_currency: currency.value,
+      fx_rate_to_target: fxRates[currency.value] || 1.0,
+      tax_percentage: 0,
+    }
+    const rows: CalcRow[] = []
+    for (const plan of comparisonPlans) {
+      const sku = byPlan.get(plan.planCode)
+      if (!sku) {
+        continue
+      }
+      const res = await request<{ data: TCOResult }>('/api/v1/estimate/tco', {
+        method: 'POST',
+        body: { sku_id: sku.id, scenario },
+      })
+      const t = res.data
+      rows.push({
+        provider: plan.provider,
+        plan: sku.plan_code,
+        slug: sku.provider_slug,
+        computeUSD: t.base_compute_usd,
+        capped: sku.has_monthly_cap,
+        ipv4USD: t.ipv4_cost_usd,
+        egressUSD: t.egress_cost_usd,
+        freeTB: Math.round((sku.included_bandwidth_gb / 1024) * 10) / 10,
+        backupUSD: t.backup_cost_usd,
+        totalUSD: t.subtotal_usd,
+        totalTarget: t.total_target,
+        isBestValue: false,
+      })
+    }
+    if (rows.length === 0) {
+      throw new ApiError(0, 'No Plans Available', 'The comparison plans are not in the catalog yet.')
+    }
+    rows.sort((a, b) => a.totalUSD - b.totalUSD)
+    rows[0].isBestValue = true
+    comparisonRows.value = rows
+  } catch (e) {
+    error.value = e instanceof ApiError ? e : ApiError.fromUnknown(e)
+  } finally {
+    loading.value = false
+  }
+}
 
-  // 4. AWS EC2 (t3.medium): $0.0416/hr uncapped, 100GB egress free ($0.09/GB overage), $0.005/hr IPv4 charge
-  const awsCompute = hours.value * 0.0416
-  const awsIPv4 = (1 + extraIPv4.value) * (hours.value * 0.005) // AWS charges $0.005/hr for primary AND extra IPv4
-  const awsOverageGB = Math.max(0, egressGB.value - 100)
-  const awsEgress = awsOverageGB * 0.09 // $0.09/GB standard internet egress
-  const awsBackup = includeBackups.value ? (50 * 0.05) : 0 // EBS snapshot $0.05/GB-mo
-  const awsTotal = awsCompute + awsIPv4 + awsEgress + awsBackup
+function scheduleRecalc() {
+  if (debounce) {
+    clearTimeout(debounce)
+  }
+  debounce = setTimeout(() => recalculate(), 350)
+}
 
-  // 5. UpCloud (2xCPU-4GB): $20/mo cap, $0.0298/hr, 4TB egress free, IPv4 included
-  const upCompute = Math.min(20.00, hours.value * 0.0298)
-  const upIPv4 = extraIPv4.value * 2.50
-  const upOverageGB = Math.max(0, egressGB.value - 4000)
-  const upEgress = upOverageGB * 0.01
-  const upBackup = includeBackups.value ? upCompute * 0.20 : 0
-  const upTotal = upCompute + upIPv4 + upEgress + upBackup
+watch([hours, egressGB, includeBackups, extraIPv4, currency], scheduleRecalc)
 
-  return [
-    {
-      provider: 'Hetzner Cloud',
-      plan: 'CPX21 (3C/4G)',
-      slug: 'hetzner',
-      computeUSD: hzCompute,
-      capped: true,
-      ipv4USD: hzIPv4,
-      egressUSD: hzEgress,
-      freeTB: 20,
-      backupUSD: hzBackup,
-      totalUSD: hzTotal,
-      isBestValue: true,
-    },
-    {
-      provider: 'Vultr',
-      plan: 'vc2-2c-4gb',
-      slug: 'vultr',
-      computeUSD: vultrCompute,
-      capped: true,
-      ipv4USD: vultrIPv4,
-      egressUSD: vultrEgress,
-      freeTB: 3,
-      backupUSD: vultrBackup,
-      totalUSD: vultrTotal,
-      isBestValue: false,
-    },
-    {
-      provider: 'UpCloud',
-      plan: '2xCPU-4GB',
-      slug: 'upcloud',
-      computeUSD: upCompute,
-      capped: true,
-      ipv4USD: upIPv4,
-      egressUSD: upEgress,
-      freeTB: 4,
-      backupUSD: upBackup,
-      totalUSD: upTotal,
-      isBestValue: false,
-    },
-    {
-      provider: 'DigitalOcean',
-      plan: 's-2vcpu-4gb',
-      slug: 'digitalocean',
-      computeUSD: doCompute,
-      capped: true,
-      ipv4USD: doIPv4,
-      egressUSD: doEgress,
-      freeTB: 4,
-      backupUSD: doBackup,
-      totalUSD: doTotal,
-      isBestValue: false,
-    },
-    {
-      provider: 'AWS EC2',
-      plan: 't3.medium',
-      slug: 'aws',
-      computeUSD: awsCompute,
-      capped: false,
-      ipv4USD: awsIPv4,
-      egressUSD: awsEgress,
-      freeTB: 0.1,
-      backupUSD: awsBackup,
-      totalUSD: awsTotal,
-      isBestValue: false,
-    },
-  ]
+onMounted(() => {
+  recalculate()
 })
 </script>

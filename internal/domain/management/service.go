@@ -250,6 +250,41 @@ func (s *Service) SetBudgetPolicy(ctx context.Context, policy BudgetPolicy) erro
 	return nil
 }
 
+// GetBudgetPolicy returns the active spend policy for an organization.
+func (s *Service) GetBudgetPolicy(ctx context.Context, orgID string) (*BudgetPolicy, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	policy, exists := s.policies[orgID]
+	if !exists {
+		return nil, errors.New("no budget policy configured for organization")
+	}
+	cp := *policy
+	return &cp, nil
+}
+
+// ListResources returns managed server inventory for an organization,
+// optionally filtered to a single connection.
+func (s *Service) ListResources(ctx context.Context, orgID, connectionID string) ([]CloudResource, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var result []CloudResource
+	for _, res := range s.resources {
+		if res.OrganizationID != orgID {
+			continue
+		}
+		if connectionID != "" && res.ConnectionID != connectionID {
+			continue
+		}
+		if res.PowerStatus == "DELETED" {
+			continue
+		}
+		result = append(result, *res)
+	}
+	return result, nil
+}
+
 // RegisterResource registers a managed server in inventory.
 func (s *Service) RegisterResource(ctx context.Context, res *CloudResource) error {
 	s.mu.Lock()

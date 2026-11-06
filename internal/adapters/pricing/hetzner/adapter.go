@@ -194,3 +194,4 @@ func (a *Adapter) loadDefaultFixture() (*adapters.RawCatalogPayload, error) {
 }
 
 var _ adapters.PricingAdapter = (*Adapter)(nil)
+

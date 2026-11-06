@@ -124,7 +124,9 @@ type Migration struct {
 	Path string
 }
 
-// RunMigrations executes all .up.sql migrations from migrationsDir in lexicographical order.
+// RunMigrations executes pending .up.sql migrations from migrationsDir in
+// lexicographical order. Applied files are tracked in schema_migrations so
+// every boot is idempotent; each migration runs inside a transaction.
 func (db *DBPool) RunMigrations(ctx context.Context, migrationsDir string) ([]string, error) {
 	if db.pool == nil {
 		return nil, errors.New("database pool is nil")
@@ -143,17 +145,74 @@ func (db *DBPool) RunMigrations(ctx context.Context, migrationsDir string) ([]st
 	}
 	sort.Strings(upFiles)
 
+	_, err = db.pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
+		filename TEXT PRIMARY KEY,
+		applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	)`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init schema_migrations: %w", err)
+	}
+
+	rows, err := db.pool.Query(ctx, `SELECT filename FROM schema_migrations`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list applied migrations: %w", err)
+	}
+	done := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		done[name] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Baseline: docker-compose seeds the schema via /docker-entrypoint-initdb.d
+	// on first volume creation. If core tables already exist but nothing is
+	// tracked, mark all present files applied instead of re-running DDL.
+	if len(done) == 0 && len(upFiles) > 0 {
+		var usersRegclass string
+		err := db.pool.QueryRow(ctx, `SELECT to_regclass('public.users')::text`).Scan(&usersRegclass)
+		if err == nil && usersRegclass != "" {
+			for _, fileName := range upFiles {
+				if _, err := db.pool.Exec(ctx,
+					`INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING`, fileName); err != nil {
+					return nil, fmt.Errorf("failed to baseline migration %s: %w", fileName, err)
+				}
+				done[fileName] = true
+			}
+		}
+	}
+
 	var applied []string
 	for _, fileName := range upFiles {
+		if done[fileName] {
+			continue
+		}
 		fullPath := filepath.Join(migrationsDir, fileName)
 		content, err := os.ReadFile(fullPath)
 		if err != nil {
 			return applied, fmt.Errorf("failed to read migration file %s: %w", fileName, err)
 		}
 
-		_, err = db.pool.Exec(ctx, string(content))
+		tx, err := db.pool.Begin(ctx)
 		if err != nil {
+			return applied, fmt.Errorf("failed to begin migration %s: %w", fileName, err)
+		}
+		if _, err := tx.Exec(ctx, string(content)); err != nil {
+			_ = tx.Rollback(ctx)
 			return applied, fmt.Errorf("migration failure on %s: %w", fileName, err)
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO schema_migrations (filename) VALUES ($1)`, fileName); err != nil {
+			_ = tx.Rollback(ctx)
+			return applied, fmt.Errorf("failed to record migration %s: %w", fileName, err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return applied, fmt.Errorf("failed to commit migration %s: %w", fileName, err)
 		}
 		applied = append(applied, fileName)
 	}

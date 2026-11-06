@@ -199,3 +199,4 @@ func TestAffiliate_Disclosure(t *testing.T) {
 	assert.Contains(t, resp.Data.EditorialIndependence, "algorithmic separation")
 	assert.Contains(t, resp.Data.KFTCNoticeKR, "공정거래위원회")
 }
+

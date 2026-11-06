@@ -139,3 +139,4 @@ func InjectMandatoryTags(existingTags map[string]string, opUUID string) map[stri
 	res["cloudscanr-op-id"] = opUUID
 	return res
 }
+

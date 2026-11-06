@@ -16,8 +16,15 @@
           </nav>
         </div>
         <div class="flex items-center space-x-3">
-          <NuxtLink to="/dashboard" class="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white">Console</NuxtLink>
-          <NuxtLink to="/auth/login" class="px-4 py-1.5 text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-md transition shadow">Sign In</NuxtLink>
+          <template v-if="auth.isAuthenticated">
+            <NuxtLink to="/dashboard" class="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white">Console</NuxtLink>
+            <span class="hidden sm:inline text-xs text-slate-500 truncate max-w-40">{{ auth.user?.email }}</span>
+            <button class="px-4 py-1.5 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md transition" @click="auth.logout()">Sign Out</button>
+          </template>
+          <template v-else>
+            <NuxtLink to="/dashboard" class="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white">Console</NuxtLink>
+            <NuxtLink to="/auth/login" class="px-4 py-1.5 text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-md transition shadow">Sign In</NuxtLink>
+          </template>
         </div>
       </div>
     </header>
@@ -45,4 +52,8 @@
     </footer>
   </div>
 </template>
+
+<script setup lang="ts">
+const auth = useAuthStore()
+</script>
 

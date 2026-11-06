@@ -123,29 +123,7 @@ func (s *Service) Search(ctx context.Context, req SearchRequest) (*SearchRespons
 		}
 
 		// Convert to estimation.NormalizedSKU for accurate TCO calculation
-		normSKU := &estimation.NormalizedSKU{
-			ID:                    sku.ID,
-			ProviderSlug:          sku.ProviderSlug,
-			PlanCode:              sku.PlanCode,
-			Name:                  sku.Name,
-			Category:              sku.Category,
-			CPUClass:              estimation.CPUClass(sku.CPUClass),
-			VCPU:                  sku.VCPU,
-			RAMMB:                 sku.RAMMB,
-			DiskGB:                sku.DiskGB,
-			DiskType:              sku.DiskType,
-			IncludedBandwidthGB:   sku.IncludedBandwidthGB,
-			IPv4IncludedCount:     sku.IPv4IncludedCount,
-			HasMonthlyCap:         sku.HasMonthlyCap,
-			CapHours:              sku.CapHours,
-			RawHourlyPriceUSD:     sku.RawHourlyPriceUSD,
-			RawMonthlyPriceUSD:    sku.RawMonthlyPriceUSD,
-			IPv4MonthlyAddonPrice: sku.IPv4MonthlyAddonPrice,
-			EgressOveragePerGB:    sku.EgressOveragePerGB,
-			BackupIsPercentage:    sku.BackupIsPercentage,
-			BackupPriceOrPct:      sku.BackupPriceOrPct,
-			SnapshotPerGBMonth:    sku.SnapshotPerGBMonth,
-		}
+		normSKU := estimation.FromCatalogSKU(sku)
 
 		tco, err := estimation.CalculateTCO(normSKU, scenario)
 		if err != nil {
@@ -249,3 +227,4 @@ func (s *Service) GetBestValueRankings(ctx context.Context, category string, lim
 	}
 	return resp.Data, nil
 }
+

@@ -94,3 +94,4 @@ func (h *Handler) BestValueRankingsHandler(w http.ResponseWriter, r *http.Reques
 		},
 	})
 }
+

@@ -58,3 +58,4 @@ func TestUpCloud_PricingAdapter(t *testing.T) {
 	assert.Equal(t, "1", p1.BandwidthTB.String())
 	assert.Equal(t, "5", p1.MonthlyPriceUSD.String())
 }
+

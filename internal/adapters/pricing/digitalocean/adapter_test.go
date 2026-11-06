@@ -70,3 +70,4 @@ func TestDigitalOcean_PricingAdapter(t *testing.T) {
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(fallbackPayload.RawItems), 3)
 }
+

@@ -28,8 +28,9 @@
       <header class="h-16 border-b border-slate-800 bg-slate-900/50 px-8 flex items-center justify-between">
         <h1 class="text-lg font-semibold text-white">Multi-Cloud Management Console</h1>
         <div class="flex items-center space-x-4 text-sm">
-          <span class="text-slate-400">Org: <strong class="text-white">Default Org</strong></span>
-          <button class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs">Sign Out</button>
+          <span class="text-slate-400">Org: <strong class="text-white">{{ auth.org?.name || '—' }}</strong></span>
+          <span class="hidden md:inline text-slate-500 text-xs">{{ auth.user?.email }}</span>
+          <button class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs" @click="auth.logout()">Sign Out</button>
         </div>
       </header>
       <main class="flex-1 p-8">
@@ -38,4 +39,8 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const auth = useAuthStore()
+</script>
 

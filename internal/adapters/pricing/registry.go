@@ -66,3 +66,4 @@ func (r *Registry) HarvestAll(ctx context.Context) (map[string]*adapters.RawCata
 	}
 	return results, nil
 }
+

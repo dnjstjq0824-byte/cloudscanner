@@ -14,6 +14,7 @@ import (
 
 func TestIdentity_RegistrationAndLogin(t *testing.T) {
 	svc := identity.NewService(nil)
+	tokens := identity.MustTokenService("handler-test-secret-with-32-bytes-min")
 
 	// 1. Test Registration
 	regReq := identity.RegisterRequest{
@@ -25,7 +26,7 @@ func TestIdentity_RegistrationAndLogin(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-	handler := identity.RegisterHandler(svc)
+	handler := identity.RegisterHandler(svc, tokens)
 	handler.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusCreated, rec.Code)
@@ -51,10 +52,35 @@ func TestIdentity_RegistrationAndLogin(t *testing.T) {
 
 	reqLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(loginBody))
 	recLogin := httptest.NewRecorder()
-	loginHandler := identity.LoginHandler(svc)
+	loginHandler := identity.LoginHandler(svc, tokens)
 	loginHandler.ServeHTTP(recLogin, reqLogin)
 
 	assert.Equal(t, http.StatusOK, recLogin.Code)
+
+	var loginRes identity.LoginResponse
+	require.NoError(t, json.Unmarshal(recLogin.Body.Bytes(), &loginRes))
+	require.NotEmpty(t, loginRes.Token)
+	claims, err := tokens.Verify(loginRes.Token)
+	require.NoError(t, err)
+	assert.Equal(t, loginRes.User.ID, claims.UserID)
+	assert.Equal(t, loginRes.OrgID, claims.OrgID)
+
+	// 3b. Authenticated /me returns the principal
+	reqMe := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	reqMe.Header.Set("Authorization", "Bearer "+loginRes.Token)
+	recMe := httptest.NewRecorder()
+	meHandler := identity.RequireAuth(tokens)(identity.MeHandler(svc))
+	meHandler.ServeHTTP(recMe, reqMe)
+	require.Equal(t, http.StatusOK, recMe.Code)
+	assert.Contains(t, recMe.Body.String(), "testuser@cloudscanr.com")
+
+	// 3c. Wrong-org header is rejected (tenant isolation)
+	reqCross := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	reqCross.Header.Set("Authorization", "Bearer "+loginRes.Token)
+	reqCross.Header.Set("X-Organization-Id", "00000000-0000-0000-0000-000000000000")
+	recCross := httptest.NewRecorder()
+	meHandler.ServeHTTP(recCross, reqCross)
+	assert.Equal(t, http.StatusForbidden, recCross.Code)
 
 	// 4. Test Invalid Password Login
 	badLoginReq := identity.LoginRequest{

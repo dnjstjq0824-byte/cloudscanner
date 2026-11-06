@@ -61,3 +61,4 @@ type SearchResponse struct {
 	Limit         int                 `json:"limit"`
 	ExecutionMs   int64               `json:"execution_ms"`
 }
+

@@ -30,6 +30,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    // NUXT_PUBLIC_API_BASE env var overrides this default automatically.
+    public: {
+      apiBase: 'http://localhost:8080',
+    },
+  },
+
   // Hybrid rendering strategy (Article 16 & Section F)
   routeRules: {
     '/': { ssr: true, swr: 300 },

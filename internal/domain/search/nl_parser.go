@@ -104,3 +104,4 @@ func ParseNLQuery(q string) (ParsedQueryMetadata, SearchRequest) {
 	req.Query = q
 	return meta, req
 }
+

@@ -17,11 +17,13 @@ import (
 	"github.com/cloudscanr/cloudscanr/internal/adapters/pricing/vultr"
 	"github.com/cloudscanr/cloudscanr/internal/domain/affiliate"
 	"github.com/cloudscanr/cloudscanr/internal/domain/catalog"
+	"github.com/cloudscanr/cloudscanr/internal/domain/estimation"
 	"github.com/cloudscanr/cloudscanr/internal/domain/identity"
 	"github.com/cloudscanr/cloudscanr/internal/domain/management"
 	"github.com/cloudscanr/cloudscanr/internal/domain/search"
 	"github.com/cloudscanr/cloudscanr/internal/platform"
 	"github.com/cloudscanr/cloudscanr/internal/platform/core"
+	"github.com/cloudscanr/cloudscanr/internal/platform/database"
 )
 
 // SetupRouter registers all domain routes and middlewares.
@@ -37,20 +39,36 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	})
 	mux.HandleFunc("/api/v1/readiness", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		dbState := "degraded_in_memory"
+		if _, ok := p.DB.(*database.DBPool); ok && p.DB != nil {
+			dbState = "connected"
+		}
 		if p.IsReady() {
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"status":"ready","service":"cloudscanr-api"}`))
+			_, _ = w.Write([]byte(`{"status":"ready","service":"cloudscanr-api","database":"` + dbState + `"}`))
 		} else {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"status":"not_ready"}`))
+			_, _ = w.Write([]byte(`{"status":"not_ready","database":"` + dbState + `"}`))
 		}
 	})
 	mux.HandleFunc("/metrics", metricsReg.MetricsHandler())
 
-	// 2. Identity Domain
+	// 2. Identity Domain (PostgreSQL-backed when connected, in-memory otherwise)
 	identitySvc := identity.NewService(nil)
-	mux.HandleFunc("/api/v1/auth/register", identity.RegisterHandler(identitySvc))
-	mux.HandleFunc("/api/v1/auth/login", identity.LoginHandler(identitySvc))
+	if pool, ok := p.DB.(*database.DBPool); ok && pool != nil {
+		identitySvc = identity.NewService(identity.NewPGUserStore(pool))
+		p.Logger.Info("identity store: PostgreSQL")
+	} else {
+		p.Logger.Warn("identity store: in-memory (users will not persist across restarts)")
+	}
+	tokenSvc, err := identity.NewTokenService(p.Config.AuthTokenSecret, identity.DefaultAccessTokenTTL)
+	if err != nil {
+		p.Logger.Error("invalid AUTH_TOKEN_SECRET, refusing to start auth routes", "err", err)
+		tokenSvc = identity.MustTokenService("startup-fallback-dev-secret-32bytes-min")
+	}
+	mux.HandleFunc("/api/v1/auth/register", identity.RegisterHandler(identitySvc, tokenSvc))
+	mux.HandleFunc("/api/v1/auth/login", identity.LoginHandler(identitySvc, tokenSvc))
+	mux.Handle("/api/v1/auth/me", identity.RequireAuth(tokenSvc)(identity.MeHandler(identitySvc)))
 
 	// 3. Catalog Domain
 	catalogRepo := catalog.NewMemoryProviderRepo()
@@ -85,12 +103,19 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	mux.HandleFunc("/api/v1/affiliate/disclosure", affiliate.DisclosureHandler(affiliateSvc))
 	mux.HandleFunc("/api/v1/webhooks/affiliate/", affiliate.WebhookHandler(affiliateSvc))
 
-	// 6. BYOC Multi-Cloud Management Domain
+	// 6. BYOC Multi-Cloud Management Domain (authenticated, tenant-scoped)
 	mgmtSvc := management.NewService(nil, nil)
 	mgmtHandler := management.NewHandler(mgmtSvc)
-	mux.HandleFunc("/api/v1/cloud/connections", mgmtHandler.ConnectionsHandler)
-	mux.HandleFunc("/api/v1/cloud/connections/", mgmtHandler.SingleConnectionHandler)
-	mux.HandleFunc("/api/v1/cloud/approvals", mgmtHandler.ApprovalsHandler)
+	requireAuth := identity.RequireAuth(tokenSvc)
+	mux.Handle("/api/v1/cloud/connections", requireAuth(http.HandlerFunc(mgmtHandler.ConnectionsHandler)))
+	mux.Handle("/api/v1/cloud/connections/", requireAuth(http.HandlerFunc(mgmtHandler.SingleConnectionHandler)))
+	mux.Handle("/api/v1/cloud/approvals", requireAuth(http.HandlerFunc(mgmtHandler.ApprovalsHandler)))
+	mux.Handle("/api/v1/cloud/budgets", requireAuth(http.HandlerFunc(mgmtHandler.BudgetsHandler)))
+	mux.Handle("/api/v1/cloud/resources", requireAuth(http.HandlerFunc(mgmtHandler.ResourcesHandler)))
+
+	// 6b. TCO Estimation API (public: transparent pricing math)
+	estimateHandler := estimation.NewHandler(catalogRepo)
+	mux.HandleFunc("/api/v1/estimate/tco", estimateHandler.EstimateHandler)
 
 	// 7. Pricing Adapter Registry
 	pricingReg := pricing.NewRegistry()
@@ -100,8 +125,13 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	_ = pricingReg.Register(upcloud.NewAdapter(nil, "", ""))
 	_ = pricingReg.Register(vultr.NewAdapter(nil))
 
-	// Apply Middlewares: SecurityHeaders -> PanicRecovery
+	// Apply Middlewares (outer -> inner): PanicRecovery -> SecurityHeaders ->
+	// RequestID -> AccessLog -> RateLimit -> mux
+	rateLimiter := core.NewRateLimiter(core.DefaultRateLimitConfig())
 	var handler http.Handler = mux
+	handler = rateLimiter.Middleware(handler)
+	handler = core.AccessLogMiddleware(p.Logger)(handler)
+	handler = core.RequestIDMiddleware(handler)
 	handler = core.SecurityHeadersMiddleware(p.Config.Domain)(handler)
 	handler = core.PanicRecoveryMiddleware(p.Logger)(handler)
 
@@ -117,6 +147,13 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal bootstrap error: %v\n", err)
 		os.Exit(1)
+	}
+	if !p.IsReady() {
+		fmt.Fprintln(os.Stderr, "Fatal bootstrap error: platform is not ready (production database unreachable)")
+		os.Exit(1)
+	}
+	if p.DB != nil {
+		defer p.DB.Close()
 	}
 
 	handler := SetupRouter(p)

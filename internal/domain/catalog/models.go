@@ -101,3 +101,4 @@ type SKUDetail struct {
 	Regions                []string        `json:"regions"`
 	LastHarvestedAt        time.Time       `json:"last_harvested_at"`
 }
+

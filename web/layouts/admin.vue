@@ -11,10 +11,9 @@
         </div>
         <nav class="p-4 space-y-1 text-sm font-medium">
           <NuxtLink to="/admin" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Ops Health</NuxtLink>
-          <NuxtLink to="/admin/pricing/quarantine" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Price Quarantine</NuxtLink>
-          <NuxtLink to="/admin/affiliate/reconcile" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Affiliate Reconciliation</NuxtLink>
-          <NuxtLink to="/admin/cloud/audit" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">BYOC Audit Logs</NuxtLink>
-          <NuxtLink to="/admin/flags" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Feature Flags</NuxtLink>
+          <NuxtLink to="/providers" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Provider Catalog</NuxtLink>
+          <NuxtLink to="/affiliate-disclosure" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Affiliate Disclosure</NuxtLink>
+          <NuxtLink to="/dashboard" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white">Back to Console</NuxtLink>
         </nav>
       </div>
       <div class="p-4 border-t border-red-900/40 text-xs text-red-400">

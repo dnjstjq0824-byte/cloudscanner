@@ -30,6 +30,7 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		assert.Contains(t, rec.Body.String(), "healthy")
 		assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
 		assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
+		assert.NotEmpty(t, rec.Header().Get("X-Request-Id"))
 
 		reqReady := httptest.NewRequest(http.MethodGet, "/api/v1/readiness", nil)
 		recReady := httptest.NewRecorder()
@@ -134,11 +135,68 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recLogin.Code)
 		assert.Contains(t, recLogin.Body.String(), "token")
+		var loginResp struct {
+			Token string `json:"token"`
+			OrgID string `json:"org_id"`
+		}
+		require.NoError(t, json.NewDecoder(recLogin.Body).Decode(&loginResp))
+		require.NotEmpty(t, loginResp.Token)
+
+		// Authenticated /me round-trip with the issued session token
+		reqMe := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+		reqMe.Header.Set("Authorization", "Bearer "+loginResp.Token)
+		recMe := httptest.NewRecorder()
+		router.ServeHTTP(recMe, reqMe)
+		assert.Equal(t, http.StatusOK, recMe.Code)
+		assert.Contains(t, recMe.Body.String(), "engineer@cloudscanr.com")
+
+		// Missing token is rejected
+		reqAnon := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+		recAnon := httptest.NewRecorder()
+		router.ServeHTTP(recAnon, reqAnon)
+		assert.Equal(t, http.StatusUnauthorized, recAnon.Code)
 	})
 
 	// 7. BYOC Cloud Management and Cost Approvals
 	t.Run("BYOC Cloud Management and Cost Approvals", func(t *testing.T) {
-		orgID := "org_byoc_test_01"
+		// Unauthenticated cloud access is rejected
+		reqAnon := httptest.NewRequest(http.MethodGet, "/api/v1/cloud/connections", nil)
+		recAnon := httptest.NewRecorder()
+		router.ServeHTTP(recAnon, reqAnon)
+		assert.Equal(t, http.StatusUnauthorized, recAnon.Code)
+
+		// Register + login a BYOC operator
+		regBody := `{"email":"byoc@cloudscanr.com","password":"StrongPassword123!","full_name":"BYOC Operator"}`
+		reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(regBody))
+		recReg := httptest.NewRecorder()
+		router.ServeHTTP(recReg, reqReg)
+		require.Equal(t, http.StatusCreated, recReg.Code)
+		var regResp struct {
+			Token        string `json:"token"`
+			Organization struct {
+				ID string `json:"id"`
+			} `json:"organization"`
+		}
+		require.NoError(t, json.NewDecoder(recReg.Body).Decode(&regResp))
+		require.NotEmpty(t, regResp.Token)
+		orgID := regResp.Organization.ID
+
+		authed := func(method, target, body string) *httptest.ResponseRecorder {
+			var reader *bytes.Buffer
+			if body != "" {
+				reader = bytes.NewBufferString(body)
+			} else {
+				reader = bytes.NewBuffer(nil)
+			}
+			req := httptest.NewRequest(method, target, reader)
+			req.Header.Set("Authorization", "Bearer "+regResp.Token)
+			req.Header.Set("X-Organization-Id", orgID)
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			return rec
+		}
+
 		connBody := `{
 			"provider_id": "01930000-0001-7000-8000-000000000001",
 			"provider_slug": "digitalocean",
@@ -148,11 +206,7 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 			"raw_api_token": "dop_v1_secret_token_live",
 			"granted_scopes": ["read", "write"]
 		}`
-		reqConn := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/connections", bytes.NewBufferString(connBody))
-		reqConn.Header.Set("X-Organization-Id", orgID)
-		reqConn.Header.Set("Content-Type", "application/json")
-		recConn := httptest.NewRecorder()
-		router.ServeHTTP(recConn, reqConn)
+		recConn := authed(http.MethodPost, "/api/v1/cloud/connections", connBody)
 
 		assert.Equal(t, http.StatusCreated, recConn.Code)
 		var connResp struct {
@@ -165,10 +219,7 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		assert.NotEmpty(t, connID)
 
 		// List connections
-		reqList := httptest.NewRequest(http.MethodGet, "/api/v1/cloud/connections", nil)
-		reqList.Header.Set("X-Organization-Id", orgID)
-		recList := httptest.NewRecorder()
-		router.ServeHTTP(recList, reqList)
+		recList := authed(http.MethodGet, "/api/v1/cloud/connections", "")
 		assert.Equal(t, http.StatusOK, recList.Code)
 		assert.Contains(t, recList.Body.String(), "Test DO Production")
 
@@ -181,21 +232,63 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 			"step_up_mfa_verified": true,
 			"duration_minutes": 15
 		}`
-		reqApp := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/approvals", bytes.NewBufferString(approvalBody))
-		reqApp.Header.Set("X-Organization-Id", orgID)
-		reqApp.Header.Set("Content-Type", "application/json")
-		recApp := httptest.NewRecorder()
-		router.ServeHTTP(recApp, reqApp)
+		recApp := authed(http.MethodPost, "/api/v1/cloud/approvals", approvalBody)
 
 		assert.Equal(t, http.StatusCreated, recApp.Code)
 		assert.Contains(t, recApp.Body.String(), "approval_signature_hmac")
 
+		// Budget policy round-trip
+		recBudgetMiss := authed(http.MethodGet, "/api/v1/cloud/budgets", "")
+		assert.Equal(t, http.StatusNotFound, recBudgetMiss.Code)
+
+		budgetBody := `{"name":"org-cap","monthly_limit_usd":500,"max_single_server_monthly_usd":100,"alert_threshold_pct":80,"hard_block_provisioning_on_exceed":true,"is_active":true}`
+		recBudgetPut := authed(http.MethodPut, "/api/v1/cloud/budgets", budgetBody)
+		require.Equal(t, http.StatusOK, recBudgetPut.Code)
+		assert.Contains(t, recBudgetPut.Body.String(), "org-cap")
+
+		recBudgetGet := authed(http.MethodGet, "/api/v1/cloud/budgets", "")
+		assert.Equal(t, http.StatusOK, recBudgetGet.Code)
+
+		// Resources inventory (empty until provider sync)
+		recRes := authed(http.MethodGet, "/api/v1/cloud/resources", "")
+		assert.Equal(t, http.StatusOK, recRes.Code)
+		assert.Contains(t, recRes.Body.String(), `"count":0`)
+
 		// Disconnect connection
-		reqDel := httptest.NewRequest(http.MethodDelete, "/api/v1/cloud/connections/"+connID, nil)
-		reqDel.Header.Set("X-Organization-Id", orgID)
-		recDel := httptest.NewRecorder()
-		router.ServeHTTP(recDel, reqDel)
+		recDel := authed(http.MethodDelete, "/api/v1/cloud/connections/"+connID, "")
 		assert.Equal(t, http.StatusOK, recDel.Code)
 		assert.Contains(t, recDel.Body.String(), "disconnected")
+	})
+
+	// 8. TCO Estimation API
+	t.Run("TCO Estimation", func(t *testing.T) {
+		// Resolve a real SKU id from the catalog
+		reqSKU := httptest.NewRequest(http.MethodGet, "/api/v1/catalog/skus?provider=digitalocean", nil)
+		recSKU := httptest.NewRecorder()
+		router.ServeHTTP(recSKU, reqSKU)
+		require.Equal(t, http.StatusOK, recSKU.Code)
+		var skuList struct {
+			Data []struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recSKU.Body).Decode(&skuList))
+		require.NotEmpty(t, skuList.Data)
+
+		estBody := `{"sku_id":"` + skuList.Data[0].ID + `","scenario":{"usage_hours":730,"required_ipv4_count":1,"estimated_egress_gb":500,"enable_backups":true,"target_currency":"USD","fx_rate_to_target":1,"tax_percentage":0}}`
+		reqEst := httptest.NewRequest(http.MethodPost, "/api/v1/estimate/tco", bytes.NewBufferString(estBody))
+		reqEst.Header.Set("Content-Type", "application/json")
+		recEst := httptest.NewRecorder()
+		router.ServeHTTP(recEst, reqEst)
+
+		require.Equal(t, http.StatusOK, recEst.Code)
+		assert.Contains(t, recEst.Body.String(), "subtotal_usd")
+		assert.Contains(t, recEst.Body.String(), "digitalocean")
+
+		// Unknown SKU is 404
+		reqBad := httptest.NewRequest(http.MethodPost, "/api/v1/estimate/tco", bytes.NewBufferString(`{"sku_id":"nope"}`))
+		recBad := httptest.NewRecorder()
+		router.ServeHTTP(recBad, reqBad)
+		assert.Equal(t, http.StatusNotFound, recBad.Code)
 	})
 }

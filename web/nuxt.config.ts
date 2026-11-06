@@ -30,6 +30,9 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // Nitro honors the NITRO_PRESET env var natively: Cloudflare Pages builds
+  // set NITRO_PRESET=cloudflare-pages without any config change here.
+
   runtimeConfig: {
     // NUXT_PUBLIC_API_BASE env var overrides this default automatically.
     public: {

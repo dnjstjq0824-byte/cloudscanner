@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt prepare && vue-tsc --noEmit"
+    "typecheck": "nuxt prepare && vue-tsc --noEmit",
+    "deploy:pages": "wrangler pages deploy dist --project-name cloudscanr-web --commit-dirty=true"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.5",

@@ -132,7 +132,7 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	handler = rateLimiter.Middleware(handler)
 	handler = core.AccessLogMiddleware(p.Logger)(handler)
 	handler = core.RequestIDMiddleware(handler)
-	handler = core.SecurityHeadersMiddleware(p.Config.Domain)(handler)
+	handler = core.SecurityHeadersMiddleware(p.Config.Domain, p.Config.CORSAllowedOrigins...)(handler)
 	handler = core.PanicRecoveryMiddleware(p.Logger)(handler)
 
 	return handler

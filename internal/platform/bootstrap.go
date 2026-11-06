@@ -23,6 +23,7 @@ type PlatformConfig struct {
 	OpenSearchURL    string        `json:"opensearch_url"`
 	KMSKeyID         string        `json:"kms_key_id"`
 	AuthTokenSecret  string        `json:"-"`
+	CORSAllowedOrigins []string    `json:"cors_allowed_origins"`
 	ShutdownTimeout  time.Duration `json:"shutdown_timeout"`
 	TreeScanEnforced bool          `json:"treescan_enforced"` // Must always be true for Article 1 compliance
 }
@@ -38,6 +39,7 @@ func DefaultConfig() *PlatformConfig {
 		OpenSearchURL:    getEnv("OPENSEARCH_URL", "http://localhost:9200"),
 		KMSKeyID:         getEnv("KMS_KEY_ID", "local-dev-mock-key-001"),
 		AuthTokenSecret:  getEnv("AUTH_TOKEN_SECRET", "dev-only-token-secret-change-me-32bytes"),
+		CORSAllowedOrigins: getEnvList("CORS_ALLOWED_ORIGINS"),
 		ShutdownTimeout:  15 * time.Second,
 		TreeScanEnforced: true,
 	}
@@ -189,6 +191,21 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+// getEnvList parses a comma-separated environment variable into a trimmed list.
+func getEnvList(key string) []string {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, part := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 func getEnvInt(key string, defaultVal int) int {

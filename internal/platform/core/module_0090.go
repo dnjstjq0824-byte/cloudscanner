@@ -9,7 +9,18 @@ import (
 )
 
 // SecurityHeadersMiddleware injects defense-in-depth HTTP security headers.
-func SecurityHeadersMiddleware(domain string) func(http.Handler) http.Handler {
+// Extra origins (e.g. local dev servers, preview deployments) are appended to
+// the CORS allowlist via exact match. Wildcards are never accepted.
+func SecurityHeadersMiddleware(domain string, extraOrigins ...string) func(http.Handler) http.Handler {
+	allowed := map[string]bool{
+		"https://" + domain:      true,
+		"https://www." + domain: true,
+	}
+	for _, o := range extraOrigins {
+		if o != "" {
+			allowed[o] = true
+		}
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Generate CSP Nonce for scripts
@@ -36,10 +47,11 @@ func SecurityHeadersMiddleware(domain string) func(http.Handler) http.Handler {
 			csp := fmt.Sprintf("default-src 'self'; script-src 'self' 'nonce-%s'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://%s;", nonce, domain)
 			w.Header().Set("Content-Security-Policy", csp)
 
-			// CORS Policy
+			// CORS Policy (exact-match allowlist only)
 			origin := r.Header.Get("Origin")
-			if origin == "https://"+domain || origin == "https://www."+domain {
+			if allowed[origin] {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Idempotency-Key, X-Organization-Id, X-Step-Up-MFA-Token")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

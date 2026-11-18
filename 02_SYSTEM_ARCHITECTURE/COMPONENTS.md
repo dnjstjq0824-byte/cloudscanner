@@ -56,5 +56,5 @@ cloudscanr/
 │   │   ├── observability/    # OpenTelemetry traces, Prometheus metrics, Secret-Redacting slog
 │   │   └── httputil/         # RFC 9457 Problem Details, Idempotency-Key middleware, Rate Limiter
 ├── web/                      # Nuxt 3.13 SSR Frontend Application
-└── migrations/               # PostgreSQL 16 SQL DDL Migrations (000001 ~ 000012)
+└── migrations/               # PostgreSQL 16 SQL DDL Migrations (000001 ~ 000011; 000012 rollback reference lives in 03_DATABASE/down_migrations_reference/)
 ```

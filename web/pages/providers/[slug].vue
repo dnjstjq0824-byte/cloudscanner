@@ -121,8 +121,8 @@
                 <td class="py-3.5 px-4">{{ (sku.ram_mb / 1024).toFixed(1) }} GB</td>
                 <td class="py-3.5 px-4">{{ sku.disk_gb }} GB {{ sku.disk_type }}</td>
                 <td class="py-3.5 px-4">{{ (sku.included_bandwidth_gb / 1024).toFixed(1) }} TB</td>
-                <td class="py-3.5 px-4">${{ sku.raw_hourly_price_usd.toFixed(4) }}/hr</td>
-                <td class="py-3.5 px-4 text-right font-extrabold text-white">${{ sku.raw_monthly_price_usd.toFixed(2) }}/mo</td>
+                <td class="py-3.5 px-4">${{ money(sku.raw_hourly_price_usd, 4) }}/hr</td>
+                <td class="py-3.5 px-4 text-right font-extrabold text-white">${{ money(sku.raw_monthly_price_usd) }}/mo</td>
                 <td class="py-3.5 px-4 text-center">
                   <a
                     :href="dealUrl"

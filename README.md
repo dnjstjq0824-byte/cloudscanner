@@ -5,6 +5,13 @@
 **Architecture Paradigm:** Modular Go Monolith + Async Worker Fleet + Nuxt 3 SSR + PostgreSQL 16 + OpenSearch 2.17  
 **Platform Independence:** 100% Independent of TreeScan (Dedicated Domain, Auth, DB, Search, Backend, Admin, CI/CD)
 
+> **Commercialization cut (2026-11-18):** the implementation ledger in
+> [`COMMERCIALIZATION.md`](COMMERCIALIZATION.md) is the authoritative record of what is
+> live: gated server provisioning, admin console (members, catalog, audit, notices,
+> settings), idempotent mutations, restart-safe KMS, and the responsive token-driven UI.
+> Blueprint directories below remain the design SSOT; where they predate the cut, the
+> ledger's implemented-vs-planned status wins.
+
 ---
 
 ## 1. Platform Overview & Core Services (Article 2)
@@ -58,8 +65,8 @@ CloudScanr enforces strict interface and package separation across four distinct
 - `00_MARKET_RESEARCH/` — Deep due diligence on 18+ cloud providers, 5+ competitors, individual Korean developer affiliate eligibility, pricing APIs, management APIs, and partner/reseller programs.
 - `01_A_TO_Z_BLUEPRINT/` — 26 exhaustive technical specifications (`A_ARCHITECTURE.md` through `Z_ZERO_TRUST.md`).
 - `02_SYSTEM_ARCHITECTURE/` — Component topology, Mermaid/ASCII system diagrams, data flows, Kubernetes/Cloudflare deployment architecture, and STRIDE threat model.
-- `03_DATABASE/` — Complete Entity-Relationship Diagram (`ERD.md`), `TABLE_DICTIONARY.md`, `INDEX_DESIGN.md`, and 12 executable PostgreSQL 16 DDL migration files (`migrations/`).
-- `04_API_SPECIFICATION/` — Full OpenAPI 3.1 specification (`openapi.yaml`) covering all 22 API groups, adapter contracts, and API test suites.
+- `03_DATABASE/` — Complete Entity-Relationship Diagram (`ERD.md`), `TABLE_DICTIONARY.md`, `INDEX_DESIGN.md`, 11 executable PostgreSQL 16 DDL migrations (`migrations/000001`–`000011`), and the rollback reference (`down_migrations_reference/000012`).
+- `04_API_SPECIFICATION/` — Full OpenAPI 3.1 specification (`openapi.yaml`) covering all 22 API groups with per-path implemented/planned status, adapter contracts, and API test suites.
 - `05_UXUI/` — Desktop & Mobile wireframes, interaction specs, component states, design system tokens, and `SCREEN_INVENTORY.csv` for all 57 screens.
 - `06_PRICING_ENGINE/` — 36-field normalization rules, multi-currency FX & tax policies, TCO scenario calculator, and freshness state machine.
 - `07_AFFILIATE_ENGINE/` — Click attribution, `SubID`/`ClickID` cryptographic signing, postback/CSV reconciliation, double-entry commission ledger, and anti-fraud compliance.

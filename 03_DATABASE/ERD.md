@@ -70,4 +70,4 @@ erDiagram
 | **5. Cloud Management** | `cloud_connections`, `provider_credentials_metadata`, `cloud_resources`, `resource_operations`, `operation_approvals`, `cloud_usage_snapshots`, `budget_policies`, `resource_reconciliations` | `000006_cloud_management_domain.up.sql` | **8** |
 | **6. Search & Content** | `search_events`, `comparison_lists`, `favorites`, `price_alerts`, `articles`, `provider_reviews` | `000007_search_and_content_domain.up.sql` | **6** |
 | **7. Operations** | `audit_logs`, `background_jobs`, `outbox_events`, `admin_actions`, `feature_flags`, `system_settings` | `000008_operations_domain.up.sql` | **6** |
-| **Total** | **All 49 Mandatory Domain Tables + 1 Materialized View (`mv_daily_affiliate_yield`)** | `000001` ~ `000012` | **49 Tables + 1 MV** |
+| **Total** | **All 49 Mandatory Domain Tables + 1 Materialized View (`mv_daily_affiliate_yield`)** | `migrations/000001` ~ `000011` (+ `down_migrations_reference/000012` rollback reference, kept outside `migrations/` so container initdb never executes it) | **49 Tables + 1 MV** |

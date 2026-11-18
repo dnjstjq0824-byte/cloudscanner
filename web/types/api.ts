@@ -1,5 +1,11 @@
 // Canonical API contracts mirroring the Go JSON payloads in
 // internal/domain/{catalog,search,estimation,identity}.
+//
+// Wire truth: every decimal money/score field arrives as a JSON STRING
+// (shopspring decimal default). Such fields are typed `number | string` and
+// templates must render them via num()/money() from ~/composables/useNum —
+// never .toFixed() on the raw payload. Plain ints (vcpu, ram_mb, counts)
+// arrive as JSON numbers.
 
 export interface Region {
   region_code: string
@@ -60,35 +66,35 @@ export interface SKUDetail {
   ipv4_included_count: number
   has_monthly_cap: boolean
   cap_hours: number
-  raw_hourly_price_usd: number
-  raw_monthly_price_usd: number
-  ipv4_monthly_addon_price: number
-  egress_overage_per_gb: number
+  raw_hourly_price_usd: number | string
+  raw_monthly_price_usd: number | string
+  ipv4_monthly_addon_price: number | string
+  egress_overage_per_gb: number | string
   backup_is_percentage: boolean
-  backup_price_or_pct: number
-  snapshot_per_gb_month: number
+  backup_price_or_pct: number | string
+  snapshot_per_gb_month: number | string
   freshness_status: string
   regions: string[]
   last_harvested_at: string
 }
 
 export interface TCOResult {
-  base_compute_usd: number
-  ipv4_cost_usd: number
-  egress_cost_usd: number
-  backup_cost_usd: number
-  snapshot_cost_usd: number
-  subtotal_usd: number
-  subtotal_target: number
-  tax_target: number
-  total_target: number
-  effective_hourly: number
+  base_compute_usd: number | string
+  ipv4_cost_usd: number | string
+  egress_cost_usd: number | string
+  backup_cost_usd: number | string
+  snapshot_cost_usd: number | string
+  subtotal_usd: number | string
+  subtotal_target: number | string
+  tax_target: number | string
+  total_target: number | string
+  effective_hourly: number | string
   currency: string
 }
 
 export interface SearchResultItem extends SKUDetail {
   tco_result: TCOResult
-  best_value_score: number
+  best_value_score: number | string
 }
 
 export interface FacetCounts {
@@ -196,8 +202,8 @@ export interface BudgetPolicy {
   organization_id: string
   connection_id?: string
   name: string
-  monthly_limit_usd: number
-  max_single_server_monthly_usd: number
+  monthly_limit_usd: number | string
+  max_single_server_monthly_usd: number | string
   alert_threshold_pct: number
   hard_block_provisioning_on_exceed: boolean
   is_active: boolean
@@ -212,8 +218,8 @@ export interface OperationApproval {
   operation_type: string
   target_resource_id?: string
   target_sku_id?: string
-  estimated_hourly_cost_usd: number
-  estimated_monthly_cost_usd: number
+  estimated_hourly_cost_usd: number | string
+  estimated_monthly_cost_usd: number | string
   approval_signature_hmac: string
   step_up_mfa_verified: boolean
   expires_at: string
@@ -233,8 +239,8 @@ export interface CloudResource {
   vcpu_count: number
   ram_mb: number
   disk_gb: number
-  estimated_hourly_cost_usd: number
-  estimated_monthly_cost_usd: number
+  estimated_hourly_cost_usd: number | string
+  estimated_monthly_cost_usd: number | string
   last_synced_at: string
   created_at: string
 }
@@ -254,4 +260,67 @@ export interface EstimateMeta {
   sku_id: string
   provider_slug: string
   plan_code: string
+}
+
+export interface ProvisionSync {
+  status: string
+  detail: string
+}
+
+export interface ProvisionEnvelope {
+  data: CloudResource
+  provider_sync: ProvisionSync
+}
+
+export interface AdminOverview {
+  users_total: number
+  providers_total: number
+  pricing_verified: number
+  skus_indexed: number
+  connections_total: number
+  connections_active: number
+  servers_managed: number
+  approvals_signed: number
+  identity_store: string
+  maintenance_mode: boolean
+  management_store: string
+  provider_sync_coverage: string
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  full_name: string
+  status: string
+  organization_id: string
+  organization_name: string
+  role: string
+  created_at: string
+}
+
+export interface AuditEntry {
+  id: string
+  created_at: string
+  actor_user_id: string
+  org_id: string
+  action: string
+  target_type: string
+  target_id: string
+  detail: string
+}
+
+export interface AdminNotice {
+  id: string
+  title: string
+  body: string
+  severity: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SiteSettings {
+  maintenance_mode: boolean
+  announcement: string
+  updated_at: string
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+  <div class="min-h-screen bg-canvas text-ink flex flex-col">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

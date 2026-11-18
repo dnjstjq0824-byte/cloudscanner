@@ -51,6 +51,10 @@ type UserStore interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
 	FindOrgByOwner(ctx context.Context, userID string) (*Organization, string, error)
+	ListUsers(ctx context.Context, limit, offset int, status string) ([]AdminUserView, int, error)
+	UpdateUserStatus(ctx context.Context, id, status string) error
+	UpdateUserRole(ctx context.Context, userID, role string) error
+	CountUsers(ctx context.Context) (int, error)
 }
 
 // MemoryUserStore provides an in-memory thread-safe user repository.
@@ -59,6 +63,7 @@ type MemoryUserStore struct {
 	users map[string]*User         // email -> User
 	byID  map[string]*User         // id -> User
 	orgs  map[string]*Organization // orgID -> Org
+	roles map[string]string        // userID -> token role override
 }
 
 // NewMemoryUserStore constructs a memory store.
@@ -67,6 +72,7 @@ func NewMemoryUserStore() *MemoryUserStore {
 		users: make(map[string]*User),
 		byID:  make(map[string]*User),
 		orgs:  make(map[string]*Organization),
+		roles: make(map[string]string),
 	}
 }
 
@@ -127,6 +133,9 @@ func (s *MemoryUserStore) FindOrgByOwner(ctx context.Context, userID string) (*O
 	defer s.mu.RUnlock()
 	for _, org := range s.orgs {
 		if org.OwnerUserID == userID {
+			if r, ok := s.roles[userID]; ok {
+				return org, r, nil
+			}
 			return org, RoleOwner, nil
 		}
 	}
@@ -215,6 +224,11 @@ func NewService(store UserStore) *Service {
 		store = NewMemoryUserStore()
 	}
 	return &Service{store: store}
+}
+
+// GetStore exposes the backing repository for admin read/write operations.
+func (s *Service) GetStore() UserStore {
+	return s.store
 }
 
 // Register registers a new user and creates their default organization.

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/cloudscanr/cloudscanr/internal/platform/core"
 	"github.com/stretchr/testify/assert"
@@ -42,11 +43,25 @@ func TestModule0057_IdempotencyMiddleware(t *testing.T) {
 	handler.ServeHTTP(recValid, reqValid)
 	assert.Equal(t, http.StatusCreated, recValid.Code)
 
-	// Test case C: Concurrent duplicate with same key before save -> 409 Conflict
+	// Test case C: Replay with the same key returns the stored outcome
+	// without re-executing the handler.
 	reqDup := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/servers", nil)
 	reqDup.Header.Set("Idempotency-Key", key)
 	recDup := httptest.NewRecorder()
 	handler.ServeHTTP(recDup, reqDup)
-	assert.Equal(t, http.StatusConflict, recDup.Code)
+	assert.Equal(t, http.StatusCreated, recDup.Code)
+	assert.Equal(t, "HIT-IDEMPOTENCY", recDup.Header().Get("X-Cache-Lookup"))
+	assert.JSONEq(t, `{"server_id":"srv-123"}`, recDup.Body.String())
+
+	// Test case D: A key left PROCESSING (lock held, no result) -> 409.
+	processingKey := "01HY0PROCESSINGKEY123456789"
+	acquired, err := store.AcquireLock(ctx, processingKey, 60*time.Second)
+	require.NoError(t, err)
+	require.True(t, acquired)
+	reqProc := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/servers", nil)
+	reqProc.Header.Set("Idempotency-Key", processingKey)
+	recProc := httptest.NewRecorder()
+	handler.ServeHTTP(recProc, reqProc)
+	assert.Equal(t, http.StatusConflict, recProc.Code)
 }
 

@@ -58,4 +58,31 @@ exact match, no wildcards) configure the listener and browser access.
 2. `CORS_ALLOWED_ORIGINS` includes the exact Pages origin
    (e.g. `https://cloudscanr.pages.dev` for previews).
 3. Pages env `NUXT_PUBLIC_API_BASE` points at the API origin.
-4. `/go/{slug}` deal links resolve against the API origin automatically.
+4. `/go/{slug}` deal links resolve against the API origin automatically
+   (`useApi().baseURL`; the client reads `NUXT_PUBLIC_API_BASE`).
+
+## 4. Routing truth (commercialization cut)
+
+- **Development (default):** `NUXT_PUBLIC_API_BASE` is unset, so the Nuxt
+  client issues same-origin calls through the Nitro `/api/**` proxy, whose
+  target is `NUXT_API_PROXY_TARGET` (default `http://localhost:8080`).
+- **Production:** `NUXT_PUBLIC_API_BASE=https://api.cloudscanr.com` makes the
+  client call the API origin directly with `Authorization: Bearer` headers;
+  exact-match CORS on the API authorizes the Pages origin. Pages needs no proxy.
+- **Outbound deals:** `/go/*` is served only by the Go API, never by Nuxt, so
+  deal links are always absolute against the API origin.
+
+## 5. Operations notes
+
+- **Toolchain:** Go `1.27` (module, CI, and `Dockerfile.api`), Node `24`,
+  pnpm `9.15.0` (`packageManager` pinned; lockfile v9). Run web installs with
+  `npx --yes pnpm@9.15.0 install` to match CI's `--frozen-lockfile` gate.
+- **Compose initdb:** `docker-compose.yml` bind-mounts `03_DATABASE/migrations/`
+  to initdb; the `000012` rollback reference was relocated to
+  `03_DATABASE/down_migrations_reference/` so fresh volumes never execute DROP
+  statements. Do not move `*.down.sql` files back into `migrations/`.
+- **Maintenance mode:** `/api/v1/admin/settings` toggles a 503 gate over user
+  traffic; health, readiness, metrics, admin, notices, and site-config stay
+  reachable. The storefront shows active `/api/v1/notices` banners.
+- **Worker:** `cmd/worker` harvests all pricing adapters on boot and every
+  15 minutes; logs provider counts per run.

@@ -260,6 +260,13 @@ func (s *Service) isTrustedDestination(targetURL string) bool {
 
 // ResolveRedirect processes an outbound deal link (/go/{slug}), validating and signing.
 func (s *Service) ResolveRedirect(ctx context.Context, slug, src, userAgent, clientIP string) (*RedirectResult, error) {
+	return s.ResolveRedirectWithCountry(ctx, slug, src, userAgent, clientIP, "UNKNOWN")
+}
+
+// ResolveRedirectWithCountry is ResolveRedirect with an explicit edge-supplied
+// ISO-3166 country code (e.g. Cloudflare CF-IPCountry). "UNKNOWN" is recorded
+// when no edge_geo signal exists; no fabricated default is stored.
+func (s *Service) ResolveRedirectWithCountry(ctx context.Context, slug, src, userAgent, clientIP, country string) (*RedirectResult, error) {
 	s.mu.RLock()
 	link, exists := s.links[slug]
 	s.mu.RUnlock()
@@ -319,7 +326,7 @@ func (s *Service) ResolveRedirect(ctx context.Context, slug, src, userAgent, cli
 		SubIDSignature:     sig,
 		SourcePagePath:     src,
 		PlacementSlot:      "deal_redirect",
-		CountryCode:        "US", // Default or MaxMind GeoIP
+		CountryCode:        normalizeCountry(country),
 		DeviceType:         deviceType,
 		IPSubnetHMAC:       s.HashIP(clientIP),
 		IsBotFiltered:      isBot,
@@ -340,6 +347,20 @@ func (s *Service) ResolveRedirect(ctx context.Context, slug, src, userAgent, cli
 		RedirectStatusCode: 302,
 		FTCBadgeRequired:   true,
 	}, nil
+}
+
+// normalizeCountry accepts a 2-letter ISO-3166 code or records UNKNOWN.
+func normalizeCountry(raw string) string {
+	cleaned := strings.ToUpper(strings.TrimSpace(raw))
+	if len(cleaned) != 2 {
+		return "UNKNOWN"
+	}
+	for _, r := range cleaned {
+		if r < 'A' || r > 'Z' {
+			return "UNKNOWN"
+		}
+	}
+	return cleaned
 }
 
 // IngestPostback handles an external affiliate network postback idempotently.

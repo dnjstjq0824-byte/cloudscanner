@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cloudscanr/cloudscanr/internal/platform"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -192,6 +193,9 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 			req.Header.Set("Authorization", "Bearer "+regResp.Token)
 			req.Header.Set("X-Organization-Id", orgID)
 			req.Header.Set("Content-Type", "application/json")
+			if method != http.MethodGet && method != http.MethodHead && method != http.MethodOptions {
+				req.Header.Set("Idempotency-Key", "test-key-"+uuid.NewString())
+			}
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 			return rec
@@ -290,5 +294,167 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		recBad := httptest.NewRecorder()
 		router.ServeHTTP(recBad, reqBad)
 		assert.Equal(t, http.StatusNotFound, recBad.Code)
+
+		// Canonical contract alias behaves identically
+		reqAlias := httptest.NewRequest(http.MethodPost, "/api/v1/pricing/estimate", bytes.NewBufferString(estBody))
+		reqAlias.Header.Set("Content-Type", "application/json")
+		recAlias := httptest.NewRecorder()
+		router.ServeHTTP(recAlias, reqAlias)
+		assert.Equal(t, http.StatusOK, recAlias.Code)
+		assert.Contains(t, recAlias.Body.String(), "subtotal_usd")
+	})
+
+	// 9. Gated Server Provisioning and Deletion
+	t.Run("Server Provision and Delete Gates", func(t *testing.T) {
+		regBody := `{"email":"provision@cloudscanr.com","password":"StrongPassword123!","full_name":"Provision Op"}`
+		reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(regBody))
+		recReg := httptest.NewRecorder()
+		router.ServeHTTP(recReg, reqReg)
+		require.Equal(t, http.StatusCreated, recReg.Code)
+		var regResp struct {
+			Token        string `json:"token"`
+			Organization struct {
+				ID string `json:"id"`
+			} `json:"organization"`
+		}
+		require.NoError(t, json.NewDecoder(recReg.Body).Decode(&regResp))
+
+		call := func(method, target, body string) *httptest.ResponseRecorder {
+			req := httptest.NewRequest(method, target, bytes.NewBufferString(body))
+			req.Header.Set("Authorization", "Bearer "+regResp.Token)
+			req.Header.Set("X-Organization-Id", regResp.Organization.ID)
+			req.Header.Set("Content-Type", "application/json")
+			if method != http.MethodGet {
+				req.Header.Set("Idempotency-Key", "srv-key-"+uuid.NewString())
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			return rec
+		}
+
+		recConn := call(http.MethodPost, "/api/v1/cloud/connections", `{
+			"provider_id":"prov-do","provider_slug":"digitalocean","connection_name":"Prov DO",
+			"auth_mode":"SCOPED_API_TOKEN","access_level":"READ_WRITE",
+			"raw_api_token":"dop_v1_test","granted_scopes":["read","write"]}`)
+		require.Equal(t, http.StatusCreated, recConn.Code)
+		var connResp struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recConn.Body).Decode(&connResp))
+
+		recApp := call(http.MethodPost, "/api/v1/cloud/approvals", `{
+			"connection_id":"`+connResp.Data.ID+`","operation_type":"CREATE_SERVER",
+			"estimated_hourly_cost_usd":0.027,"estimated_monthly_cost_usd":20,
+			"step_up_mfa_verified":true,"duration_minutes":15}`)
+		require.Equal(t, http.StatusCreated, recApp.Code)
+		var appResp struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recApp.Body).Decode(&appResp))
+
+		// Provision without an idempotency key is rejected
+		reqNoKey := httptest.NewRequest(http.MethodPost, "/api/v1/cloud/servers", bytes.NewBufferString(`{}`))
+		reqNoKey.Header.Set("Authorization", "Bearer "+regResp.Token)
+		recNoKey := httptest.NewRecorder()
+		router.ServeHTTP(recNoKey, reqNoKey)
+		assert.Equal(t, http.StatusBadRequest, recNoKey.Code)
+
+		recProv := call(http.MethodPost, "/api/v1/cloud/servers", `{
+			"connection_id":"`+connResp.Data.ID+`","approval_id":"`+appResp.Data.ID+`",
+			"hostname":"web-01","vcpu_count":2,"ram_mb":4096,"disk_gb":80}`)
+		require.Equal(t, http.StatusCreated, recProv.Code)
+		assert.Contains(t, recProv.Body.String(), "PROVISIONING")
+		assert.Contains(t, recProv.Body.String(), "provider_sync")
+		var provResp struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recProv.Body).Decode(&provResp))
+
+		recGet := call(http.MethodGet, "/api/v1/cloud/servers/"+provResp.Data.ID, "")
+		assert.Equal(t, http.StatusOK, recGet.Code)
+
+		// Wrong hostname confirmation is blocked
+		recBadDel := call(http.MethodDelete, "/api/v1/cloud/servers/"+provResp.Data.ID,
+			`{"confirmation_hostname":"wrong","mfa_verified":true}`)
+		assert.Equal(t, http.StatusBadRequest, recBadDel.Code)
+
+		recDel := call(http.MethodDelete, "/api/v1/cloud/servers/"+provResp.Data.ID,
+			`{"confirmation_hostname":"web-01","mfa_verified":true}`)
+		assert.Equal(t, http.StatusOK, recDel.Code)
+	})
+
+	// 10. Admin Console APIs
+	t.Run("Admin Console Overview Users Audit Notices", func(t *testing.T) {
+		regBody := `{"email":"owner@cloudscanr.com","password":"StrongPassword123!","full_name":"Owner"}`
+		reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(regBody))
+		recReg := httptest.NewRecorder()
+		router.ServeHTTP(recReg, reqReg)
+		require.Equal(t, http.StatusCreated, recReg.Code)
+		var regResp struct {
+			Token string `json:"token"`
+			User  struct {
+				ID string `json:"id"`
+			} `json:"user"`
+		}
+		require.NoError(t, json.NewDecoder(recReg.Body).Decode(&regResp))
+
+		admin := func(method, target, body string) *httptest.ResponseRecorder {
+			req := httptest.NewRequest(method, target, bytes.NewBufferString(body))
+			req.Header.Set("Authorization", "Bearer "+regResp.Token)
+			req.Header.Set("Content-Type", "application/json")
+			if method != http.MethodGet {
+				req.Header.Set("Idempotency-Key", "adm-key-"+uuid.NewString())
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			return rec
+		}
+
+		recOver := admin(http.MethodGet, "/api/v1/admin/overview", "")
+		require.Equal(t, http.StatusOK, recOver.Code)
+		assert.Contains(t, recOver.Body.String(), "providers_total")
+
+		recUsers := admin(http.MethodGet, "/api/v1/admin/users?limit=10", "")
+		require.Equal(t, http.StatusOK, recUsers.Code)
+		assert.Contains(t, recUsers.Body.String(), "owner@cloudscanr.com")
+
+		recPatch := admin(http.MethodPatch, "/api/v1/admin/users/"+regResp.User.ID, `{"role":"ADMIN"}`)
+		require.Equal(t, http.StatusOK, recPatch.Code)
+		assert.Contains(t, recPatch.Body.String(), "ADMIN")
+
+		recProv := admin(http.MethodPatch, "/api/v1/admin/providers/digitalocean", `{"pricing_api_status":"PENDING"}`)
+		require.Equal(t, http.StatusOK, recProv.Code)
+		assert.Contains(t, recProv.Body.String(), "PENDING")
+		// Restore canonical seed state for other scenarios
+		_ = admin(http.MethodPatch, "/api/v1/admin/providers/digitalocean", `{"pricing_api_status":"VERIFIED"}`)
+
+		recNotice := admin(http.MethodPost, "/api/v1/admin/notices",
+			`{"title":"Maintenance","body":"Window at 02:00 UTC","severity":"INFO","is_active":true}`)
+		require.Equal(t, http.StatusCreated, recNotice.Code)
+		var noticeResp struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.NewDecoder(recNotice.Body).Decode(&noticeResp))
+
+		reqPub := httptest.NewRequest(http.MethodGet, "/api/v1/notices", nil)
+		recPub := httptest.NewRecorder()
+		router.ServeHTTP(recPub, reqPub)
+		require.Equal(t, http.StatusOK, recPub.Code)
+		assert.Contains(t, recPub.Body.String(), "Maintenance")
+
+		recAudit := admin(http.MethodGet, "/api/v1/admin/audit-logs?limit=20", "")
+		require.Equal(t, http.StatusOK, recAudit.Code)
+		assert.Contains(t, recAudit.Body.String(), "admin.notice.create")
+
+		recCfg := admin(http.MethodGet, "/api/v1/admin/settings", "")
+		require.Equal(t, http.StatusOK, recCfg.Code)
 	})
 }

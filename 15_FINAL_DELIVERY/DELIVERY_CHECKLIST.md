@@ -19,3 +19,12 @@
 - [x] **13_TESTING (7 files)**: `MASTER_TEST_MATRIX.csv` + 6 E2E/Audit specifications including all 22 mandatory server safety tests.
 - [x] **14_DEVOPS (5 files)**: CI/CD, monitoring, backup/recovery, FinOps cost management, and production runbook.
 - [x] **15_FINAL_DELIVERY (5 files)**: Phase 0–10 roadmap, requirements traceability matrix CSV, known limitations, delivery checklist, and final master report.
+
+## Addendum 2026-11-18 (commercialization cut)
+- `03_DATABASE/migrations/000012_down_migrations_reference.down.sql` relocated to
+  `03_DATABASE/down_migrations_reference/` (content unchanged). Rationale: the `migrations/`
+  directory is bind-mounted to PostgreSQL `initdb.d` by `docker-compose.yml`, and the
+  `*.down.sql` suffix still matches initdb's `*.sql` glob, so fresh volumes would apply
+  `000001`–`000011` and then DROP every table. The API migration runner only applies
+  `*.up.sql`, so boot behavior is unchanged. Historical counts above ("12 SQL migrations",
+  "`000001`–`000012`") describe the pre-relocation audit state and are preserved as record.

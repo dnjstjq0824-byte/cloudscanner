@@ -74,11 +74,11 @@
               {{ item.vcpu }} vCPU • {{ (item.ram_mb / 1024).toFixed(1) }} GB RAM • {{ item.disk_gb }} GB {{ item.disk_type }}
             </td>
             <td class="py-4 px-4 font-bold text-white">
-              ${{ item.tco_result.subtotal_usd.toFixed(2) }}/mo
+              ${{ money(item.tco_result.subtotal_usd) }}/mo
             </td>
             <td class="py-4 px-4 text-center">
               <span class="px-2.5 py-1 rounded-full font-bold bg-sky-950 text-sky-400 border border-sky-800 text-xs">
-                {{ item.best_value_score.toFixed(2) }}
+                {{ money(item.best_value_score) }}
               </span>
             </td>
             <td class="py-4 px-4 text-center">

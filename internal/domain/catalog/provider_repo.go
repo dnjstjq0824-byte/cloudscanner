@@ -18,6 +18,16 @@ type ProviderRepo interface {
 	ListSKUs(ctx context.Context, category, providerSlug string) ([]SKUDetail, error)
 	GetSKU(ctx context.Context, skuID string) (*SKUDetail, error)
 	UpsertSKU(ctx context.Context, sku *SKUDetail) error
+	UpdateProviderStatuses(ctx context.Context, slug string, patch ProviderStatusPatch) (*Provider, error)
+}
+
+// ProviderStatusPatch carries admin-editable integration statuses.
+// Nil fields are left unchanged; values are restricted to the canonical set.
+type ProviderStatusPatch struct {
+	AffiliateStatus       *string
+	PricingAPIStatus      *string
+	ManagementAPIStatus   *string
+	ResellerProgramStatus *string
 }
 
 // MemoryProviderRepo provides a thread-safe repository seeded with 18 verified providers.
@@ -422,5 +432,47 @@ func (r *MemoryProviderRepo) UpsertSKU(ctx context.Context, sku *SKUDetail) erro
 	}
 	r.skus[sku.ID] = sku
 	return nil
+}
+
+// canonicalStatusSet restricts admin status writes to known values.
+var canonicalStatusSet = map[string]bool{
+	"VERIFIED": true, "PENDING": true, "FAILED": true,
+	"NOT_SUPPORTED": true, "CONTRACT_REQUIRED": true, "DISABLED": true,
+}
+
+// UpdateProviderStatuses applies an admin status patch to one provider.
+func (r *MemoryProviderRepo) UpdateProviderStatuses(ctx context.Context, slug string, patch ProviderStatusPatch) (*Provider, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	p, exists := r.providers[strings.ToLower(slug)]
+	if !exists {
+		return nil, errors.New("provider not found")
+	}
+	apply := func(dst *string, v *string) error {
+		if v == nil {
+			return nil
+		}
+		upper := strings.ToUpper(strings.TrimSpace(*v))
+		if !canonicalStatusSet[upper] {
+			return errors.New("unknown status value: want VERIFIED, PENDING, FAILED, NOT_SUPPORTED, CONTRACT_REQUIRED, or DISABLED")
+		}
+		*dst = upper
+		return nil
+	}
+	if err := apply(&p.AffiliateStatus, patch.AffiliateStatus); err != nil {
+		return nil, err
+	}
+	if err := apply(&p.PricingAPIStatus, patch.PricingAPIStatus); err != nil {
+		return nil, err
+	}
+	if err := apply(&p.ManagementAPIStatus, patch.ManagementAPIStatus); err != nil {
+		return nil, err
+	}
+	if err := apply(&p.ResellerProgramStatus, patch.ResellerProgramStatus); err != nil {
+		return nil, err
+	}
+	cp := *p
+	return &cp, nil
 }
 

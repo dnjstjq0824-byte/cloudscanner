@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -40,6 +41,25 @@ func NewMockKMSService(keyID string) (*MockKMSService, error) {
 	if _, err := io.ReadFull(rand.Reader, kek); err != nil {
 		return nil, fmt.Errorf("failed to generate KEK: %w", err)
 	}
+	return &MockKMSService{kek: kek, keyID: keyID}, nil
+}
+
+// NewMockKMSServiceWithSecret derives a stable 256-bit KEK from a caller-held
+// secret (e.g. AUTH_TOKEN_SECRET) via SHA-256 domain separation, so sealed
+// credentials remain decryptable across process restarts. Random per-boot KEKs
+// (NewMockKMSService) intentionally cannot reopen sealed data after restart and
+// must only be used in tests. Production replaces this implementation with a
+// managed KMS (AWS KMS / Vault) behind the same KMSEnvelopeService interface.
+func NewMockKMSServiceWithSecret(keyID string, secret []byte) (*MockKMSService, error) {
+	if keyID == "" {
+		keyID = "local-dev-mock-key-001"
+	}
+	if len(secret) < 32 {
+		return nil, errors.New("kms secret must be at least 32 bytes")
+	}
+	sum := sha256.Sum256(append([]byte("cloudscanr-kms-kek-v1:"), secret...))
+	kek := make([]byte, 32)
+	copy(kek, sum[:])
 	return &MockKMSService{kek: kek, keyID: keyID}, nil
 }
 

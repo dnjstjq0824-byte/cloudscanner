@@ -41,3 +41,11 @@
 - **Database Schema Audit**: `49 / 49` tables + `1` materialized view verified across `000001`–`000012` SQL migrations; zero plaintext secret columns.
 - **OpenAPI 3.1 Audit**: `openapi.yaml` parsed cleanly as valid YAML with `openapi: 3.1.0` and all 22 required API tag groups.
 - **CSV & JSON Audit**: All 9 CSV files (`PROVIDER_MATRIX.csv`, `INDIVIDUAL_AFFILIATE_ELIGIBILITY.csv`, `AFFILIATE_PROGRAMS.csv`, `PRICING_API_MATRIX.csv`, `MANAGEMENT_API_MATRIX.csv`, `PARTNER_RESELLER_MATRIX.csv`, `SCREEN_INVENTORY.csv`, `WORK_ORDER_INDEX.csv`, `MASTER_TEST_MATRIX.csv`, `REQUIREMENTS_TRACEABILITY.csv`) verified parseable with uniform column counts per row.
+
+## Addendum 2026-11-18 (commercialization cut)
+Counts above describe the pre-cut audit state and are preserved as record. Since then:
+`000012_down_migrations_reference.down.sql` moved to `03_DATABASE/down_migrations_reference/`
+(initdb DROP hazard removed, content unchanged); `openapi.yaml` carries explicit
+implemented-vs-planned status per path (tokens are v1 HMAC-SHA256, router is
+net/http ServeMux) — see `COMMERCIALIZATION.md` at the repository root for the
+authoritative implementation ledger.

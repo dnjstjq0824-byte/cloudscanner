@@ -32,4 +32,4 @@
 9. `000009_rls_and_security_policies.up.sql`
 10. `000010_analytical_views_and_indexes.up.sql`
 11. `000011_seed_providers_and_roles.up.sql`
-12. `000012_down_migrations_reference.down.sql` (Rollback reference)
+12. `down_migrations_reference/000012_down_migrations_reference.down.sql` (Rollback reference; relocated out of `migrations/` on 2026-11-18 so PostgreSQL initdb never executes DROP statements on fresh volumes)

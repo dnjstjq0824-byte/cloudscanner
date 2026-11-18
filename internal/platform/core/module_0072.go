@@ -24,7 +24,10 @@ func NewModule0072(migrationsDir string) *Module0072 {
 	return &Module0072{migrationsDir: migrationsDir}
 }
 
-// VerifyMigrationsIntegrity audits the 12 migration files for completeness and RLS policies.
+// VerifyMigrationsIntegrity audits the 11 executable migrations plus the
+// relocated down-migration reference for completeness and RLS policies.
+// The down reference lives in 03_DATABASE/down_migrations_reference/ (never
+// inside migrations/, which initdb executes) — see COMMERCIALIZATION.md §1.
 func (m *Module0072) VerifyMigrationsIntegrity(ctx context.Context) error {
 	entries, err := os.ReadDir(m.migrationsDir)
 	if err != nil {
@@ -43,7 +46,7 @@ func (m *Module0072) VerifyMigrationsIntegrity(ctx context.Context) error {
 			upCount++
 		}
 		if strings.HasSuffix(name, ".down.sql") {
-			downCount++
+			return fmt.Errorf("down migration %q must not live in %s (initdb executes *.sql on fresh volumes); relocate it to 03_DATABASE/down_migrations_reference/", name, m.migrationsDir)
 		}
 
 		fullPath := filepath.Join(m.migrationsDir, name)
@@ -64,11 +67,21 @@ func (m *Module0072) VerifyMigrationsIntegrity(ctx context.Context) error {
 		}
 	}
 
+	// The rollback reference is verified in its relocated home.
+	refDir := filepath.Join(filepath.Dir(m.migrationsDir), "down_migrations_reference")
+	if refEntries, err := os.ReadDir(refDir); err == nil {
+		for _, e := range refEntries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".down.sql") {
+				downCount++
+			}
+		}
+	}
+
 	if upCount < 11 {
 		return fmt.Errorf("expected at least 11 up migrations, found %d", upCount)
 	}
 	if downCount < 1 {
-		return fmt.Errorf("expected down migration reference, found %d", downCount)
+		return fmt.Errorf("expected down migration reference in %s, found %d", refDir, downCount)
 	}
 	if !hasExtensions {
 		return errors.New("migration 000001 must create required extensions (pgcrypto, pg_trgm, btree_gist)")

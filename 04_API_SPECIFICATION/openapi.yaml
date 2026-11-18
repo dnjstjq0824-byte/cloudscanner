@@ -11,6 +11,22 @@ info:
     13. Server Provisioning API, 14. Server Management API, 15. Budget API,
     16. Cloud Cost API, 17. Price Alert API, 18. Analytics API, 19. Admin API,
     20. Content API, 21. Audit API, 22. Notifications API.
+
+    Implementation status (commercialization cut, see COMMERCIALIZATION.md):
+    IMPLEMENTED — auth register/login/me; providers + catalog categories/skus;
+    search/skus + rankings/best-value; affiliate/disclosure + /go redirect +
+    webhooks/affiliate postbacks; cloud connections/approvals/budgets/resources;
+    cloud servers CRUD with approval+budget gates (sync 201/200, provider-side
+    execution pending live management adapters); pricing/estimate (canonical)
+    with estimate/tco alias; pricing/fx-rates (503 without PostgreSQL); admin
+    overview/users/providers/audit-logs/notices/settings; public notices and
+    site-config; Idempotency-Key enforcement on cloud/admin mutations.
+    PLANNED (Phase 4) — email verify, MFA/TOTP enrolment, logout/refresh,
+    users/orgs self-service, comparisons, promotions, costs/summary,
+    price-alerts, analytics, content, standalone audit-logs API, notifications,
+    server power/resize actions, pricing quarantine, affiliate CSV reconcile
+    endpoint. Tokens are v1 HMAC-SHA256 (not PASETO); the HTTP router is
+    net/http ServeMux.
   contact:
     name: CloudScanr Lead System Architecture Team
     url: https://cloudscanr.com
@@ -72,8 +88,8 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: PASETO-v4
-      description: Short-lived (15m) access token with user_id, org_id, role, and step_up_mfa claims.
+      bearerFormat: CloudScanr-HMAC-SHA256-v1
+      description: Short-lived (15m) HMAC-SHA256 access token (identity/token.go) with user_id, org_id, role, and expiry claims.
     StepUpMFAAuth:
       type: apiKey
       in: header
@@ -87,16 +103,16 @@ components:
       schema:
         type: string
         minLength: 16
-        maxLength: 128
-      description: Unique client key preventing duplicate execution and double billing.
+        maxLength: 64
+      description: Unique client key preventing duplicate execution and double billing. Replays return the stored outcome with X-Cache-Lookup HIT-IDEMPOTENCY.
     OrgIdHeader:
       name: X-Organization-Id
       in: header
-      required: true
+      required: false
       schema:
         type: string
         format: uuid
-      description: Active tenant organization context enforced via PostgreSQL RLS.
+      description: Optional tenant context; when present it must match the session org or the request is rejected with 403.
   schemas:
     ProblemDetails:
       type: object
@@ -371,8 +387,21 @@ paths:
   /api/v1/pricing/estimate:
     post:
       tags: [06_Pricing]
-      summary: Calculate itemized TCO across usage hours (730h/calendar), egress, IPv4, backups, FX & tax
+      summary: Calculate itemized TCO (implemented; canonical path, identical to /api/v1/estimate/tco alias)
       operationId: calculateTCOEstimate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TCOEstimateRequest"
+      responses:
+        "200": { description: Itemized raw vs estimated TCO breakdown }
+  /api/v1/estimate/tco:
+    post:
+      tags: [06_Pricing]
+      summary: Alias of POST /api/v1/pricing/estimate (implemented; kept for backward compatibility)
+      operationId: calculateTCOEstimateAlias
       requestBody:
         required: true
         content:
@@ -384,7 +413,7 @@ paths:
   /api/v1/pricing/fx-rates:
     get:
       tags: [06_Pricing]
-      summary: Get active multi-currency exchange rates and collection timestamps
+      summary: Get latest FX rates from PostgreSQL seed data (implemented; 503 without a database)
       operationId: getFXRates
       responses:
         "200": { description: FX rate table }
@@ -544,13 +573,25 @@ paths:
       responses:
         "201": { description: Signed approval_id issued }
   /api/v1/cloud/servers:
+    get:
+      tags: [14_Server_Management]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - name: connection_id
+          in: query
+          schema: { type: string }
+      summary: List managed servers for the organization (implemented)
+      operationId: listServers
+      responses:
+        "200": { description: Unified multi-cloud server inventory }
     post:
       tags: [13_Server_Provisioning]
-      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
-      summary: Provision a new cloud server using a verified Cost Approval token
+      summary: Provision a server with a signed approval (implemented, sync 201; body carries approval_id, hostname, specs; MFA attested on the approval)
       operationId: provisionServer
       requestBody:
         required: true
@@ -559,8 +600,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateServerRequest"
       responses:
-        "202": { description: Idempotent provisioning job queued }
-        "402": { description: Blocked by organization budget policy }
+        "201": { description: Managed server created as PROVISIONING with provider_sync pending note }
+        "400": { description: Blocked by budget policy, invalid approval, or safety gate }
         "403": { description: Missing cost approval or read-only token }
 
   # 14. Server Management API
@@ -569,8 +610,8 @@ paths:
       tags: [14_Server_Management]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: List all BYOC servers across connected providers for the organization
-      operationId: listServers
+      summary: PLANNED — use implemented GET /api/v1/cloud/servers or /api/v1/cloud/resources instead
+      operationId: listServersInventory
       responses:
         "200": { description: Unified multi-cloud server inventory }
   /api/v1/cloud/servers/{server_id}:
@@ -589,7 +630,7 @@ paths:
         "200": { description: Server detail }
     delete:
       tags: [14_Server_Management]
-      security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
@@ -597,14 +638,10 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-        - name: approval_id
-          in: query
-          required: true
-          schema: { type: string, format: uuid }
-      summary: Permanently delete a cloud server (Requires destructive approval_id + Step-Up MFA)
+      summary: Permanently delete a server (implemented; JSON body carries confirmation_hostname + mfa_verified double gate)
       operationId: deleteServer
       responses:
-        "202": { description: Server deletion job queued }
+        "200": { description: Server marked DELETED }
   /api/v1/cloud/servers/{server_id}/actions:
     post:
       tags: [14_Server_Management]
@@ -616,7 +653,7 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      summary: Execute Day-2 action (power_on, shutdown, reboot, power_cycle, resize, snapshot, backup)
+      summary: PLANNED — Day-2 actions (power_on, shutdown, reboot, resize, snapshot, backup) pending live management adapters
       operationId: executeServerAction
       responses:
         "202": { description: Action queued }
@@ -627,18 +664,20 @@ paths:
       tags: [15_Budget]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: List organization budget policies and alert thresholds
-      operationId: listBudgetPolicies
+      summary: Get the organization budget policy (implemented; 404 when none exists)
+      operationId: getBudgetPolicy
       responses:
-        "200": { description: Budget policies }
-    post:
+        "200": { description: Budget policy }
+    put:
       tags: [15_Budget]
       security: [{ BearerAuth: [] }]
-      parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: Create or update a monthly spend cap and provisioning hard-block policy
-      operationId: createBudgetPolicy
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      summary: Create or update the monthly spend cap and provisioning hard-block policy (implemented)
+      operationId: saveBudgetPolicy
       responses:
-        "201": { description: Budget policy saved }
+        "200": { description: Budget policy saved }
 
   # 16. Cloud Cost API
   /api/v1/cloud/costs/summary:
@@ -683,7 +722,7 @@ paths:
     get:
       tags: [19_Admin]
       security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
-      summary: List quarantined price sync anomalies awaiting Catalog Admin review
+      summary: PLANNED — list quarantined price sync anomalies awaiting Catalog Admin review
       operationId: listPricingQuarantine
       responses:
         "200": { description: Quarantined sync jobs }
@@ -692,10 +731,147 @@ paths:
       tags: [19_Admin]
       security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
-      summary: Upload and reconcile an affiliate network conversion/commission CSV export
+      summary: PLANNED — upload and reconcile an affiliate network conversion/commission CSV export (CSV parsing itself is implemented in the affiliate adapter)
       operationId: reconcileAffiliateCSV
       responses:
         "200": { description: Reconciliation report }
+  /api/v1/admin/overview:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: Live KPI counts for the ops console (implemented; ADMIN role or higher)
+      operationId: getAdminOverview
+      responses:
+        "200": { description: KPI overview }
+  /api/v1/admin/users:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: Paginated member list with org and role (implemented; ADMIN role or higher)
+      operationId: listAdminUsers
+      responses:
+        "200": { description: Member list }
+  /api/v1/admin/users/{user_id}:
+    patch:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Update member status and/or role; audited (implemented)
+      operationId: patchAdminUser
+      responses:
+        "200": { description: Updated member }
+  /api/v1/admin/providers/{slug}:
+    patch:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      summary: Moderate provider integration statuses; audited (implemented)
+      operationId: patchAdminProvider
+      responses:
+        "200": { description: Updated provider }
+  /api/v1/admin/audit-logs:
+    get:
+      tags: [21_Audit]
+      security: [{ BearerAuth: [] }]
+      summary: Append-only billable/admin operation trail, newest first (implemented; process-local ring, PG persistence planned)
+      operationId: listAdminAuditLogs
+      responses:
+        "200": { description: Audit entries }
+  /api/v1/admin/notices:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: List all site notices (implemented)
+      operationId: listAdminNotices
+      responses:
+        "200": { description: Notice list }
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      summary: Publish a site notice; audited (implemented)
+      operationId: createAdminNotice
+      responses:
+        "201": { description: Notice created }
+  /api/v1/admin/notices/{notice_id}:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: notice_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Get one notice (implemented)
+      operationId: getAdminNotice
+      responses:
+        "200": { description: Notice }
+    put:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: notice_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Update a notice; audited (implemented)
+      operationId: updateAdminNotice
+      responses:
+        "200": { description: Notice updated }
+    delete:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+        - name: notice_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: Delete a notice; audited (implemented)
+      operationId: deleteAdminNotice
+      responses:
+        "200": { description: Notice deleted }
+  /api/v1/admin/settings:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: Read runtime site settings (implemented)
+      operationId: getAdminSettings
+      responses:
+        "200": { description: Site settings }
+    put:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      summary: Update maintenance mode and announcement; audited (implemented)
+      operationId: updateAdminSettings
+      responses:
+        "200": { description: Site settings }
+  /api/v1/notices:
+    get:
+      tags: [22_Notifications]
+      summary: Active public site notices for storefront banners (implemented; no auth)
+      operationId: listPublicNotices
+      responses:
+        "200": { description: Active notices }
+  /api/v1/site-config:
+    get:
+      tags: [22_Notifications]
+      summary: Public maintenance flag and announcement (implemented; no auth)
+      operationId: getPublicSiteConfig
+      responses:
+        "200": { description: Site config }
 
   # 20. Content API
   /api/v1/content/articles:

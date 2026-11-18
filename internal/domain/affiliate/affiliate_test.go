@@ -43,6 +43,32 @@ func TestAffiliate_Redirect(t *testing.T) {
 	assert.Equal(t, "DESKTOP", recorded.DeviceType)
 	assert.NotEmpty(t, recorded.IPSubnetHMAC)
 	assert.NotEqual(t, "203.0.113.195", recorded.IPSubnetHMAC) // Privacy preserved
+	assert.Equal(t, "UNKNOWN", recorded.CountryCode)          // no edge geo signal
+}
+
+func TestAffiliate_EdgeCountryPropagation(t *testing.T) {
+	svc := NewService([]byte("test_secret_key_123"), []byte("test_salt_456"))
+	handler := RedirectHandler(svc)
+
+	req := httptest.NewRequest(http.MethodGet, "/go/hetzner", nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	req.Header.Set("CF-IPCountry", "kr")
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+	require.Equal(t, http.StatusFound, rec.Code)
+	require.Len(t, svc.clicks, 1)
+	for _, c := range svc.clicks {
+		assert.Equal(t, "KR", c.CountryCode)
+	}
+
+	// Invalid edge value falls back to UNKNOWN, never a fabricated default.
+	reqBad := httptest.NewRequest(http.MethodGet, "/go/hetzner", nil)
+	reqBad.Header.Set("User-Agent", "Mozilla/5.0")
+	reqBad.Header.Set("CF-IPCountry", "XX1")
+	recBad := httptest.NewRecorder()
+	handler(recBad, reqBad)
+	require.Equal(t, http.StatusFound, recBad.Code)
+	require.Len(t, svc.clicks, 2)
 }
 
 func TestAffiliate_AntiBotAndOpenRedirect(t *testing.T) {

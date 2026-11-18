@@ -17,7 +17,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.27'
           cache: true
 
       - name: Verify Article 1 Zero TreeScan Coupling
@@ -67,6 +67,9 @@ jobs:
 
       - name: Type Check & Lint
         run: pnpm run typecheck
+
+      - name: Unit Tests
+        run: pnpm test
 
       - name: Build Nuxt 3 Application
         run: pnpm run build

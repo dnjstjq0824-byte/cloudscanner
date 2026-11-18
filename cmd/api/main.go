@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/cloudscanr/cloudscanr/internal/adapters/pricing/hetzner"
 	"github.com/cloudscanr/cloudscanr/internal/adapters/pricing/upcloud"
 	"github.com/cloudscanr/cloudscanr/internal/adapters/pricing/vultr"
+	"github.com/cloudscanr/cloudscanr/internal/domain/admin"
 	"github.com/cloudscanr/cloudscanr/internal/domain/affiliate"
 	"github.com/cloudscanr/cloudscanr/internal/domain/catalog"
 	"github.com/cloudscanr/cloudscanr/internal/domain/estimation"
@@ -22,6 +24,7 @@ import (
 	"github.com/cloudscanr/cloudscanr/internal/domain/management"
 	"github.com/cloudscanr/cloudscanr/internal/domain/search"
 	"github.com/cloudscanr/cloudscanr/internal/platform"
+	"github.com/cloudscanr/cloudscanr/internal/platform/audit"
 	"github.com/cloudscanr/cloudscanr/internal/platform/core"
 	"github.com/cloudscanr/cloudscanr/internal/platform/database"
 )
@@ -103,19 +106,66 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	mux.HandleFunc("/api/v1/affiliate/disclosure", affiliate.DisclosureHandler(affiliateSvc))
 	mux.HandleFunc("/api/v1/webhooks/affiliate/", affiliate.WebhookHandler(affiliateSvc))
 
-	// 6. BYOC Multi-Cloud Management Domain (authenticated, tenant-scoped)
-	mgmtSvc := management.NewService(nil, nil)
+	// 6. BYOC Multi-Cloud Management Domain (authenticated, tenant-scoped).
+	// KMS and safety-gate keys derive from the server secret so sealed
+	// credentials stay decryptable across restarts.
+	kmsSvc, err := core.NewMockKMSServiceWithSecret(p.Config.KMSKeyID, []byte(p.Config.AuthTokenSecret))
+	if err != nil {
+		p.Logger.Warn("KMS secret too short; sealed credentials will not survive restarts", "err", err)
+		kmsSvc, _ = core.NewMockKMSService(p.Config.KMSKeyID)
+	}
+	safetySum := sha256.Sum256([]byte("cloudscanr-safety-gate-v1:" + p.Config.AuthTokenSecret))
+	mgmtSvc := management.NewService(kmsSvc, safetySum[:])
 	mgmtHandler := management.NewHandler(mgmtSvc)
-	requireAuth := identity.RequireAuth(tokenSvc)
-	mux.Handle("/api/v1/cloud/connections", requireAuth(http.HandlerFunc(mgmtHandler.ConnectionsHandler)))
-	mux.Handle("/api/v1/cloud/connections/", requireAuth(http.HandlerFunc(mgmtHandler.SingleConnectionHandler)))
-	mux.Handle("/api/v1/cloud/approvals", requireAuth(http.HandlerFunc(mgmtHandler.ApprovalsHandler)))
-	mux.Handle("/api/v1/cloud/budgets", requireAuth(http.HandlerFunc(mgmtHandler.BudgetsHandler)))
-	mux.Handle("/api/v1/cloud/resources", requireAuth(http.HandlerFunc(mgmtHandler.ResourcesHandler)))
+	trail := audit.NewLog()
+	noticeStore := admin.NewNoticeStore()
+	settingsStore := admin.NewSettingsStore()
+	mgmtHandler.SetAudit(trail)
 
-	// 6b. TCO Estimation API (public: transparent pricing math)
+	requireAuth := identity.RequireAuth(tokenSvc)
+	idem := core.IdempotencyMiddleware(core.NewMemoryIdempotencyStore())
+	// Authenticated + idempotent: GETs pass through, mutations require a key.
+	requireAuthIdem := func(h http.Handler) http.Handler { return requireAuth(idem(h)) }
+	requireAdmin := func(h http.Handler) http.Handler {
+		return requireAuth(identity.RequireRole(identity.RoleAdmin)(idem(h)))
+	}
+	mux.Handle("/api/v1/cloud/connections", requireAuthIdem(http.HandlerFunc(mgmtHandler.ConnectionsHandler)))
+	mux.Handle("/api/v1/cloud/connections/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleConnectionHandler)))
+	mux.Handle("/api/v1/cloud/approvals", requireAuthIdem(http.HandlerFunc(mgmtHandler.ApprovalsHandler)))
+	mux.Handle("/api/v1/cloud/budgets", requireAuthIdem(http.HandlerFunc(mgmtHandler.BudgetsHandler)))
+	mux.Handle("/api/v1/cloud/resources", requireAuth(http.HandlerFunc(mgmtHandler.ResourcesHandler)))
+	mux.Handle("/api/v1/cloud/servers", requireAuthIdem(http.HandlerFunc(mgmtHandler.ServersHandler)))
+	mux.Handle("/api/v1/cloud/servers/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleServerHandler)))
+
+	// 6b. TCO Estimation API (public: transparent pricing math).
+	// /api/v1/pricing/estimate is the canonical contract alias of /api/v1/estimate/tco.
 	estimateHandler := estimation.NewHandler(catalogRepo)
 	mux.HandleFunc("/api/v1/estimate/tco", estimateHandler.EstimateHandler)
+	mux.HandleFunc("/api/v1/pricing/estimate", estimateHandler.EstimateHandler)
+	var fxPool *database.DBPool
+	if pool, ok := p.DB.(*database.DBPool); ok {
+		fxPool = pool
+	}
+	mux.Handle("/api/v1/pricing/fx-rates", estimation.NewFXHandler(fxPool))
+
+	// 6c. Admin Console Domain (authenticated, ADMIN role or higher).
+	dbMode := "in-memory"
+	if fxPool != nil {
+		dbMode = "postgresql"
+	}
+	adminHandler := admin.NewHandler(identitySvc.GetStore(), catalogRepo, mgmtSvc, trail, noticeStore, settingsStore, dbMode)
+	mux.Handle("/api/v1/admin/overview", requireAdmin(http.HandlerFunc(adminHandler.OverviewHandler)))
+	mux.Handle("/api/v1/admin/users", requireAdmin(http.HandlerFunc(adminHandler.UsersHandler)))
+	mux.Handle("/api/v1/admin/users/", requireAdmin(http.HandlerFunc(adminHandler.SingleUserHandler)))
+	mux.Handle("/api/v1/admin/providers/", requireAdmin(http.HandlerFunc(adminHandler.SingleProviderHandler)))
+	mux.Handle("/api/v1/admin/audit-logs", requireAdmin(http.HandlerFunc(adminHandler.AuditLogsHandler)))
+	mux.Handle("/api/v1/admin/notices", requireAdmin(http.HandlerFunc(adminHandler.NoticesHandler)))
+	mux.Handle("/api/v1/admin/notices/", requireAdmin(http.HandlerFunc(adminHandler.SingleNoticeHandler)))
+	mux.Handle("/api/v1/admin/settings", requireAdmin(http.HandlerFunc(adminHandler.SettingsHandler)))
+
+	// 6d. Public site surfaces (no auth, maintenance-safe for status comms).
+	mux.HandleFunc("/api/v1/notices", adminHandler.PublicNoticesHandler)
+	mux.HandleFunc("/api/v1/site-config", adminHandler.PublicSiteConfigHandler)
 
 	// 7. Pricing Adapter Registry
 	pricingReg := pricing.NewRegistry()
@@ -126,10 +176,11 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	_ = pricingReg.Register(vultr.NewAdapter(nil))
 
 	// Apply Middlewares (outer -> inner): PanicRecovery -> SecurityHeaders ->
-	// RequestID -> AccessLog -> RateLimit -> mux
+	// RequestID -> AccessLog -> Maintenance -> RateLimit -> mux
 	rateLimiter := core.NewRateLimiter(core.DefaultRateLimitConfig())
 	var handler http.Handler = mux
 	handler = rateLimiter.Middleware(handler)
+	handler = admin.MaintenanceMiddleware(settingsStore)(handler)
 	handler = core.AccessLogMiddleware(p.Logger)(handler)
 	handler = core.RequestIDMiddleware(handler)
 	handler = core.SecurityHeadersMiddleware(p.Config.Domain, p.Config.CORSAllowedOrigins...)(handler)

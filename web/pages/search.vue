@@ -204,7 +204,7 @@
                   {{ item.provider_name }}
                 </span>
                 <span class="text-base font-bold text-white">{{ item.plan_code }}</span>
-                <span v-if="item.best_value_score > 5" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
+                <span v-if="num(item.best_value_score) > 5" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
                   ⚡ High Value
                 </span>
                 <span
@@ -230,7 +230,7 @@
                 </span>
               </div>
               <div class="text-[11px] text-slate-500 tabular-nums">
-                TCO ${{ item.tco_result.subtotal_usd.toFixed(2) }}/mo · score {{ item.best_value_score.toFixed(2) }}
+                TCO ${{ money(item.tco_result.subtotal_usd) }}/mo · score {{ money(item.best_value_score) }}
               </div>
             </div>
 
@@ -238,11 +238,11 @@
             <div class="flex items-center space-x-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
               <div class="text-right">
                 <div class="text-2xl font-extrabold text-white tabular-nums">
-                  ${{ item.tco_result.subtotal_usd.toFixed(2) }}
+                  ${{ money(item.tco_result.subtotal_usd) }}
                   <span class="text-xs font-normal text-slate-400">/mo</span>
                 </div>
                 <div class="text-[11px] text-slate-500 tabular-nums">
-                  ${{ item.raw_hourly_price_usd.toFixed(4) }}/hr
+                  ${{ money(item.raw_hourly_price_usd, 4) }}/hr
                 </div>
               </div>
 

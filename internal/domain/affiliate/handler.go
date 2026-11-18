@@ -33,8 +33,13 @@ func RedirectHandler(svc *Service) http.HandlerFunc {
 		if comma := strings.Index(ip, ","); comma != -1 {
 			ip = strings.TrimSpace(ip[:comma])
 		}
+		// Edge-supplied geo signal (Cloudflare / load balancer); UNKNOWN otherwise.
+		country := r.Header.Get("CF-IPCountry")
+		if country == "" {
+			country = r.Header.Get("X-Geo-Country")
+		}
 
-		res, err := svc.ResolveRedirect(r.Context(), slug, src, ua, ip)
+		res, err := svc.ResolveRedirectWithCountry(r.Context(), slug, src, ua, ip, country)
 		if err != nil {
 			if err == ErrLinkNotFound {
 				http.NotFound(w, r)

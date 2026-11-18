@@ -7,30 +7,37 @@ export default {
     './layouts/**/*.vue',
     './pages/**/*.vue',
     './app.vue',
-    './error.vue'
+    './error.vue',
   ],
   theme: {
     extend: {
       colors: {
+        canvas: 'var(--bg-canvas)',
+        surface: 'var(--bg-surface)',
+        elevated: 'var(--bg-elevated)',
+        subtle: 'var(--border-subtle)',
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          900: '#0c4a6e',
+          DEFAULT: 'var(--brand-primary)',
+          hover: 'var(--brand-hover)',
         },
-        surface: {
-          dark: '#0f172a',
-          card: '#1e293b',
-          border: '#334155',
-        }
+        accent: 'var(--brand-accent)',
+        live: 'var(--semantic-live)',
+        ink: {
+          DEFAULT: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+        },
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
-      }
+        sans: ['Pretendard Variable', 'Inter', '-apple-system', 'sans-serif'],
+      },
+      boxShadow: {
+        pop: '0 12px 40px rgba(0, 0, 0, 0.45)',
+        card: '0 2px 12px rgba(0, 0, 0, 0.25)',
+      },
+      transitionTimingFunction: {
+        snap: 'cubic-bezier(0.2, 0, 0, 1)',
+      },
     },
   },
   plugins: [],
 } satisfies Config
-

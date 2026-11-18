@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/cloudscanr/cloudscanr/internal/domain/identity"
+	"github.com/cloudscanr/cloudscanr/internal/platform/audit"
 	"github.com/cloudscanr/cloudscanr/internal/platform/core"
 )
 
 // Handler serves BYOC Cloud Management REST endpoints.
 type Handler struct {
-	svc *Service
+	svc   *Service
+	audit *audit.Log
 }
 
 // NewHandler constructs a management HTTP handler.
@@ -78,6 +80,7 @@ func (h *Handler) ConnectionsHandler(w http.ResponseWriter, r *http.Request) {
 			core.WriteProblemDetails(w, p)
 			return
 		}
+		h.record(userID, orgID, "connection.create", "connection", conn.ID, "provider="+conn.ProviderSlug)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -93,7 +96,7 @@ func (h *Handler) ConnectionsHandler(w http.ResponseWriter, r *http.Request) {
 
 // SingleConnectionHandler handles GET and DELETE /api/v1/cloud/connections/{id}.
 func (h *Handler) SingleConnectionHandler(w http.ResponseWriter, r *http.Request) {
-	orgID, _, ok := principal(r)
+	orgID, userID, ok := principal(r)
 	if !ok {
 		writeUnauthorized(w, r)
 		return
@@ -133,6 +136,7 @@ func (h *Handler) SingleConnectionHandler(w http.ResponseWriter, r *http.Request
 			core.WriteProblemDetails(w, p)
 			return
 		}
+		h.record(userID, orgID, "connection.delete", "connection", connID, "")
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -174,6 +178,7 @@ func (h *Handler) ApprovalsHandler(w http.ResponseWriter, r *http.Request) {
 		core.WriteProblemDetails(w, p)
 		return
 	}
+	h.record(userID, orgID, "approval.sign", "approval", app.ID, "op="+string(app.OperationType))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -184,7 +189,7 @@ func (h *Handler) ApprovalsHandler(w http.ResponseWriter, r *http.Request) {
 
 // BudgetsHandler routes GET and PUT /api/v1/cloud/budgets.
 func (h *Handler) BudgetsHandler(w http.ResponseWriter, r *http.Request) {
-	orgID, _, ok := principal(r)
+	orgID, userID, ok := principal(r)
 	if !ok {
 		writeUnauthorized(w, r)
 		return
@@ -217,6 +222,7 @@ func (h *Handler) BudgetsHandler(w http.ResponseWriter, r *http.Request) {
 			core.WriteProblemDetails(w, p)
 			return
 		}
+		h.record(userID, orgID, "budget.save", "budget", orgID, "name="+req.Name)
 		policy, _ := h.svc.GetBudgetPolicy(r.Context(), orgID)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

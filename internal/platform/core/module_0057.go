@@ -99,7 +99,29 @@ func (s *MemoryIdempotencyStore) ReleaseLock(ctx context.Context, key string) er
 	return nil
 }
 
+// idempotencyResultTTL retains completed responses for safe client retries.
+const idempotencyResultTTL = 24 * time.Hour
+
+// captureWriter records the downstream status code and body for replay.
+type captureWriter struct {
+	http.ResponseWriter
+	status int
+	body   []byte
+}
+
+func (c *captureWriter) WriteHeader(status int) {
+	c.status = status
+	c.ResponseWriter.WriteHeader(status)
+}
+
+func (c *captureWriter) Write(b []byte) (int, error) {
+	c.body = append(c.body, b...)
+	return c.ResponseWriter.Write(b)
+}
+
 // IdempotencyMiddleware ensures mutating cloud or admin actions use an Idempotency-Key.
+// The first execution captures its outcome; replays with the same key receive the
+// stored response without re-executing the handler.
 func IdempotencyMiddleware(store IdempotencyStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +166,9 @@ func IdempotencyMiddleware(store IdempotencyStore) func(http.Handler) http.Handl
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			cw := &captureWriter{ResponseWriter: w, status: http.StatusOK}
+			next.ServeHTTP(cw, r)
+			_ = store.SaveResult(r.Context(), key, cw.status, cw.body, idempotencyResultTTL)
 		})
 	}
 }

@@ -14,7 +14,7 @@ func TestModule0072_DatabaseAndRLS(t *testing.T) {
 	m := core.NewModule0072("../../../03_DATABASE/migrations")
 	ctx := context.Background()
 
-	// 1. Verify all 12 migration files integrity
+	// 1. Verify the 11 executable migrations + relocated down reference
 	err := m.VerifyMigrationsIntegrity(ctx)
 	require.NoError(t, err, "PostgreSQL migrations should pass integrity verification")
 

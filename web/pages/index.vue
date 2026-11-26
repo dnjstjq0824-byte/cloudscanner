@@ -1,70 +1,68 @@
 <template>
   <div class="space-y-12">
     <div v-if="maintenance" class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300" role="alert">
-      Scheduled maintenance is in progress. Search and console actions may return 503 until it completes.
+      {{ $t('home.maintenance') }}
     </div>
 
     <section class="py-10 sm:py-16">
       <div class="max-w-3xl space-y-6">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand">Independent SaaS deal intelligence</p>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand">{{ $t('home.kicker') }}</p>
         <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink leading-[1.1]">
-          Find real SaaS deals.<br />Never overpay.
+          {{ $t('home.h1a') }}<br />{{ $t('home.h1b') }}
         </h1>
         <p class="text-base sm:text-lg text-ink-secondary max-w-2xl">
-          TirpScanner indexes subscription plans across vendors, tracks price
-          drops and promos, and discloses every affiliate link. Cloud catalog
-          and server management were retired with the 2026-11-26 pivot.
+          {{ $t('home.lede') }}
         </p>
         <div class="flex flex-wrap gap-3 pt-2">
-          <NuxtLink to="/dashboard" class="btn-primary !px-6 !py-3">Open the Console</NuxtLink>
-          <NuxtLink to="/affiliate-disclosure" class="btn-ghost !px-6 !py-3">How We Disclose</NuxtLink>
+          <NuxtLink :to="$localePath('/dashboard')" class="btn-primary !px-6 !py-3">{{ $t('home.ctaConsole') }}</NuxtLink>
+          <NuxtLink :to="$localePath('/affiliate-disclosure')" class="btn-ghost !px-6 !py-3">{{ $t('home.ctaDisclosure') }}</NuxtLink>
         </div>
       </div>
     </section>
 
-    <section aria-label="Live catalog statistics" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+    <section :aria-label="$t('home.statsLabel')" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
       <div class="card p-6 text-center">
         <div class="text-3xl font-bold text-brand tabular-nums">{{ stats.providers }}</div>
-        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">Vendors Tracked</div>
+        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">{{ $t('home.statVendors') }}</div>
       </div>
       <div class="card p-6 text-center">
         <div class="text-3xl font-bold text-brand tabular-nums">{{ stats.plans }}</div>
-        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">Plans Indexed</div>
+        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">{{ $t('home.statPlans') }}</div>
       </div>
       <div class="card p-6 text-center">
         <div class="text-3xl font-bold text-brand tabular-nums">{{ stats.latency }}</div>
-        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">Search Latency</div>
+        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">{{ $t('home.statLatency') }}</div>
       </div>
       <div class="card p-6 text-center">
         <div class="text-3xl font-bold text-brand tabular-nums">{{ stats.categories }}</div>
-        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">Categories</div>
+        <div class="text-xs text-ink-secondary mt-1 uppercase tracking-wider">{{ $t('home.statCategories') }}</div>
       </div>
     </section>
 
-    <section class="card p-6 sm:p-8 space-y-5" aria-label="How TirpScanner works">
-      <h2 class="text-lg font-bold text-ink">One flow: scan → compare → save</h2>
+    <section class="card p-6 sm:p-8 space-y-5" :aria-label="$t('home.howLabel')">
+      <h2 class="text-lg font-bold text-ink">{{ $t('home.howTitle') }}</h2>
       <ol class="space-y-4 text-sm">
         <li class="flex gap-3">
           <span class="font-bold text-brand tabular-nums">01</span>
-          <p class="text-ink-secondary"><strong class="text-ink">Scan live deals</strong> across SaaS vendors: plan prices, trials, coupons, and renewals, normalized per seat and billing cycle.</p>
+          <p class="text-ink-secondary"><strong class="text-ink">{{ $t('home.step1title') }}</strong> {{ $t('home.step1body') }}</p>
         </li>
         <li class="flex gap-3">
           <span class="font-bold text-brand tabular-nums">02</span>
-          <p class="text-ink-secondary"><strong class="text-ink">Compare plans side by side</strong> with transparent effective pricing — no sponsored ranking boosts, ever.</p>
+          <p class="text-ink-secondary"><strong class="text-ink">{{ $t('home.step2title') }}</strong> {{ $t('home.step2body') }}</p>
         </li>
         <li class="flex gap-3">
           <span class="font-bold text-brand tabular-nums">03</span>
-          <p class="text-ink-secondary"><strong class="text-ink">Get price-drop alerts</strong> when tracked plans go on sale or cheaper tiers appear.</p>
+          <p class="text-ink-secondary"><strong class="text-ink">{{ $t('home.step3title') }}</strong> {{ $t('home.step3body') }}</p>
         </li>
       </ol>
       <div class="flex flex-wrap gap-3 pt-1">
-        <NuxtLink to="/dashboard" class="text-xs font-semibold text-brand hover:underline">Open the console →</NuxtLink>
+        <NuxtLink :to="$localePath('/dashboard')" class="text-xs font-semibold text-brand hover:underline">{{ $t('home.howCta') }}</NuxtLink>
       </div>
     </section>
 
-    <section class="text-xs text-ink-secondary leading-relaxed border-t border-subtle pt-6" aria-label="Independence note">
-      TirpScanner ranks by measured value, never by commission. Outbound deal links are labeled and governed by our
-      <NuxtLink to="/affiliate-disclosure" class="text-brand hover:underline font-semibold">affiliate disclosure</NuxtLink>.
+    <section class="text-xs text-ink-secondary leading-relaxed border-t border-subtle pt-6" :aria-label="$t('home.indepLabel')">
+      {{ $t('home.indep1') }} {{ $t('home.indep2pre') }}
+      <NuxtLink :to="$localePath('/affiliate-disclosure')" class="text-brand hover:underline font-semibold">{{ $t('home.indep2link') }}</NuxtLink>{{ $t('home.indep2post') }}
     </section>
   </div>
 </template>

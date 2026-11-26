@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Notices" subtitle="Publish site banners. Active notices appear on every public page." />
+    <PageHeader :title="$t('admin.noticesTitle')" :subtitle="$t('admin.noticesSubtitle')" />
 
-    <LoadingSkeleton v-if="loading" :rows="3" label="Loading notices" />
+    <LoadingSkeleton v-if="loading" :rows="3" :label="$t('admin.loadingNotices')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
@@ -17,28 +17,28 @@
           <p class="text-xs text-ink-secondary">{{ n.body }}</p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button class="btn-ghost !py-1.5 !px-3 !text-xs" @click="startEdit(n)">Edit</button>
+          <button class="btn-ghost !py-1.5 !px-3 !text-xs" @click="startEdit(n)">{{ $t('common.edit') }}</button>
           <button class="btn-danger !py-1.5 !px-3 !text-xs" :disabled="deleting === n.id" @click="askDelete(n)">
-            {{ deleting === n.id ? 'Deleting…' : 'Delete' }}
+            {{ deleting === n.id ? $t('common.deleting') : $t('common.delete') }}
           </button>
         </div>
       </div>
-      <EmptyState v-if="notices.length === 0" title="No notices yet" message="Publish the first banner with the form below." />
+      <EmptyState v-if="notices.length === 0" :title="$t('admin.noNoticesTitle')" :message="$t('admin.noNoticesBody')" />
     </div>
 
     <div class="card p-6 space-y-5">
-      <h3 class="text-sm font-bold text-ink">{{ editing ? 'Edit notice' : 'Publish a notice' }}</h3>
+      <h3 class="text-sm font-bold text-ink">{{ editing ? $t('admin.formEdit') : $t('admin.formPublish') }}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="space-y-1.5 md:col-span-2">
-          <label for="notice-title" class="label">Title</label>
-          <input id="notice-title" v-model="form.title" type="text" required placeholder="Scheduled maintenance" class="input" />
+          <label for="notice-title" class="label">{{ $t('admin.fieldTitle') }}</label>
+          <input id="notice-title" v-model="form.title" type="text" required :placeholder="$t('admin.titlePlaceholder')" class="input" />
         </div>
         <div class="space-y-1.5 md:col-span-2">
-          <label for="notice-body" class="label">Body</label>
-          <textarea id="notice-body" v-model="form.body" rows="3" required placeholder="What should visitors know?" class="input" />
+          <label for="notice-body" class="label">{{ $t('admin.fieldBody') }}</label>
+          <textarea id="notice-body" v-model="form.body" rows="3" required :placeholder="$t('admin.bodyPlaceholder')" class="input" />
         </div>
         <div class="space-y-1.5">
-          <label for="notice-severity" class="label">Severity</label>
+          <label for="notice-severity" class="label">{{ $t('admin.fieldSeverity') }}</label>
           <select id="notice-severity" v-model="form.severity" class="input">
             <option>INFO</option>
             <option>WARNING</option>
@@ -48,7 +48,7 @@
         <div class="flex items-end pb-1">
           <label class="flex items-center gap-2 text-xs text-ink-secondary cursor-pointer">
             <input v-model="form.isActive" type="checkbox" class="rounded accent-sky-600" />
-            Active (visible on public pages)
+            {{ $t('admin.activeLabel') }}
           </label>
         </div>
       </div>
@@ -56,16 +56,16 @@
         {{ formError }}
       </div>
       <div class="flex gap-2">
-        <button class="btn-primary" :disabled="saving" @click="save">{{ saving ? 'Saving…' : editing ? 'Update Notice' : 'Publish Notice' }}</button>
-        <button v-if="editing" class="btn-ghost" @click="cancelEdit">Cancel</button>
+        <button class="btn-primary" :disabled="saving" @click="save">{{ saving ? $t('common.saving') : editing ? $t('admin.updateNotice') : $t('admin.publishNotice') }}</button>
+        <button v-if="editing" class="btn-ghost" @click="cancelEdit">{{ $t('common.cancel') }}</button>
       </div>
     </div>
 
     <ConfirmModal
       :open="confirmOpen"
-      title="Delete this notice?"
-      message="The banner disappears from public pages immediately. This cannot be undone."
-      confirm-label="Delete"
+      :title="$t('admin.modalDeleteTitle')"
+      :message="$t('admin.modalDeleteBody')"
+      :confirm-label="$t('admin.modalDeleteConfirm')"
       danger
       :busy="deleting !== ''"
       @confirm="remove"
@@ -85,7 +85,8 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Notices' })
+const { t } = useI18n()
+useHead(() => ({ title: t('admin.noticesTitle') }))
 
 const loading = ref(false)
 const error = ref<ApiError | null>(null)
@@ -140,7 +141,7 @@ function cancelEdit() {
 async function save() {
   formError.value = ''
   if (!form.title.trim() || !form.body.trim()) {
-    formError.value = 'Title and body are required.'
+    formError.value = t('admin.requiredError')
     return
   }
   saving.value = true
@@ -148,10 +149,10 @@ async function save() {
     const body = { title: form.title.trim(), body: form.body.trim(), severity: form.severity, is_active: form.isActive }
     if (editing.value) {
       await request<ItemEnvelope<AdminNotice>>(`/api/v1/admin/notices/${editing.value}`, { method: 'PUT', body })
-      toast.success('Notice updated.')
+      toast.success(t('admin.toastNoticeUpdated'))
     } else {
       await request<ItemEnvelope<AdminNotice>>('/api/v1/admin/notices', { method: 'POST', body })
-      toast.success('Notice published.')
+      toast.success(t('admin.toastNoticePublished'))
     }
     editing.value = ''
     resetForm()
@@ -178,7 +179,7 @@ async function remove() {
   deleting.value = id
   try {
     await request(`/api/v1/admin/notices/${id}`, { method: 'DELETE' })
-    toast.success('Notice deleted.')
+    toast.success(t('admin.toastNoticeDeleted'))
     confirmOpen.value = false
     await load()
   } catch (e) {

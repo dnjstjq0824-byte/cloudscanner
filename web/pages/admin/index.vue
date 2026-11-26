@@ -1,55 +1,55 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Operations Health" subtitle="Live platform signals. Every value below is read from the running API." />
+    <PageHeader :title="$t('admin.opsTitle')" :subtitle="$t('admin.opsSubtitle')" />
 
-    <LoadingSkeleton v-if="loading" :rows="3" :lines="2" label="Loading ops health" />
+    <LoadingSkeleton v-if="loading" :rows="3" :lines="2" :label="$t('ops.loadingOps')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
     <template v-else>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard :value="overview?.users_total ?? '—'" label="Registered Users" to="/admin/users" link-label="Manage members" />
-        <StatCard :value="providerCount" label="Vendors in Catalog" to="/admin/providers" link-label="Moderate catalog" />
-        <StatCard :value="verifiedCount" label="Verified Deal Feeds" />
-        <StatCard :value="overview?.skus_indexed ?? '—'" label="Plans Indexed" />
+        <StatCard :value="overview?.users_total ?? '—'" :label="$t('admin.cardUsers')" :to="$localePath('/admin/users')" :link-label="$t('admin.cardUsersLink')" />
+        <StatCard :value="providerCount" :label="$t('admin.cardVendors')" :to="$localePath('/admin/providers')" :link-label="$t('admin.cardVendorsLink')" />
+        <StatCard :value="verifiedCount" :label="$t('admin.cardFeeds')" />
+        <StatCard :value="overview?.skus_indexed ?? '—'" :label="$t('admin.cardPlans')" />
         <div class="card p-6">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full live-dot" :class="readiness?.status === 'ready' ? 'bg-emerald-400' : 'bg-rose-400'" />
-            <span class="text-lg font-bold text-ink">{{ readiness?.status === 'ready' ? 'API Ready' : 'API Not Ready' }}</span>
+            <span class="text-lg font-bold text-ink">{{ readiness?.status === 'ready' ? $t('admin.apiReady') : $t('admin.apiNotReady') }}</span>
           </div>
           <div class="text-xs text-ink-secondary mt-2">
-            Identity: <strong class="text-ink">{{ overview?.identity_store || '—' }}</strong>
-            · Sync coverage: <strong class="text-ink">{{ overview?.provider_sync_coverage || '—' }}</strong>
+            {{ $t('admin.identity') }}: <strong class="text-ink">{{ overview?.identity_store || '—' }}</strong>
+            · {{ $t('admin.syncCoverage') }}: <strong class="text-ink">{{ overview?.provider_sync_coverage || '—' }}</strong>
           </div>
         </div>
       </div>
 
       <div v-if="overview?.maintenance_mode" class="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300" role="alert">
-        Maintenance mode is ON: user traffic receives 503 while admin, health, notices, and site-config stay reachable.
-        <NuxtLink to="/admin/settings" class="font-bold underline underline-offset-2">Open settings</NuxtLink>
+        {{ $t('ops.maintenanceBanner') }}
+        <NuxtLink :to="$localePath('/admin/settings')" class="font-bold underline underline-offset-2">{{ $t('ops.openSettings') }}</NuxtLink>
       </div>
 
       <div class="card p-6 space-y-3">
-        <h3 class="text-sm font-bold text-ink">Affiliate compliance</h3>
+        <h3 class="text-sm font-bold text-ink">{{ $t('ops.complianceTitle') }}</h3>
         <div class="text-xs text-ink-secondary space-y-1">
-          <p>Disclosure policy version: <strong class="text-ink">{{ disclosure?.policy_version || '—' }}</strong></p>
-          <p>Independent comparison: <strong class="text-ink">{{ disclosure?.independent_comparison ? 'enforced' : '—' }}</strong></p>
-          <p>Pay-for-placement: <strong class="text-ink">{{ disclosure && !disclosure.pay_for_placement_allowed ? 'blocked' : '—' }}</strong></p>
+          <p>{{ $t('ops.policyVersion') }} <strong class="text-ink">{{ disclosure?.policy_version || '—' }}</strong></p>
+          <p>{{ $t('ops.indepCompare') }} <strong class="text-ink">{{ disclosure?.independent_comparison ? $t('ops.enforced') : '—' }}</strong></p>
+          <p>{{ $t('ops.pfp') }} <strong class="text-ink">{{ disclosure && !disclosure.pay_for_placement_allowed ? $t('ops.blocked') : '—' }}</strong></p>
         </div>
-        <NuxtLink to="/affiliate-disclosure" class="inline-block text-xs font-semibold text-brand hover:underline">
-          View public disclosure &rarr;
+        <NuxtLink :to="$localePath('/affiliate-disclosure')" class="inline-block text-xs font-semibold text-brand hover:underline">
+          {{ $t('ops.viewDisclosure') }}
         </NuxtLink>
       </div>
 
       <div class="card p-6 space-y-3">
-        <h3 class="text-sm font-bold text-ink">Sync status by vendor</h3>
+        <h3 class="text-sm font-bold text-ink">{{ $t('admin.syncTitle') }}</h3>
         <div class="overflow-x-auto -mx-6 px-6">
           <table class="table-shell min-w-[560px]">
             <thead>
               <tr>
-                <th class="py-2 pr-4">Vendor</th>
-                <th class="py-2 pr-4">Deal Feed</th>
-                <th class="py-2">Affiliate</th>
+                <th class="py-2 pr-4">{{ $t('admin.colVendor') }}</th>
+                <th class="py-2 pr-4">{{ $t('admin.colFeed') }}</th>
+                <th class="py-2">{{ $t('admin.colAffiliate') }}</th>
               </tr>
             </thead>
             <tbody class="text-ink-secondary">
@@ -76,7 +76,8 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Ops Health' })
+const { t } = useI18n()
+useHead(() => ({ title: t('nav.opsHealth') }))
 
 interface Readiness {
   status: string

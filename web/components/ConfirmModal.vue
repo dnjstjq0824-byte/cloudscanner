@@ -15,9 +15,9 @@
         <slot />
         <div v-if="error" class="text-xs text-rose-500" role="alert">{{ error }}</div>
         <div class="flex justify-end gap-2 pt-1">
-          <button class="btn-ghost !py-2 !text-xs" :disabled="busy" @click="$emit('cancel')">Cancel</button>
+          <button class="btn-ghost !py-2 !text-xs" :disabled="busy" @click="$emit('cancel')">{{ $t('common.cancel') }}</button>
           <button :class="danger ? 'btn-danger' : 'btn-primary'" class="!py-2 !text-xs" :disabled="busy" @click="$emit('confirm')">
-            {{ busy ? 'Working…' : confirmLabel }}
+            {{ busy ? $t('common.working') : (confirmLabel || $t('common.confirm')) }}
           </button>
         </div>
       </div>
@@ -28,7 +28,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{ open: boolean; title: string; message: string; confirmLabel?: string; danger?: boolean; busy?: boolean; error?: string }>(),
-  { confirmLabel: 'Confirm', danger: false, busy: false, error: '' }
+  { confirmLabel: '', danger: false, busy: false, error: '' }
 )
 defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>()
 </script>

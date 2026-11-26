@@ -90,6 +90,42 @@
 - P2 | 12_AGENT_EXECUTION/AGENT_ROLE_MATRIX.md:18 | 구 live 화면 수 | 57-screen → 44 live(16+7+21, 퇴역 13) [owner: docs]
 - P2 | 02_SYSTEM_ARCHITECTURE/THREAT_MODEL.md:14 | live 위협이 퇴역 테스트로 검증 | TM-02·TM-04 검증을 live SEARCH/AFFILIATE/SECURITY E2E 게이트로 전환 [owner: docs]
 
+## 조치 현황 (2026-11-26 코드 재대조)
+
+코드 소유 항목은 전부 해소 확인. 문서 소유 항목(오타·드리프트·스펙 추록)은 OPEN.
+형식: `상태 | 항목 | 근거`.
+
+- DONE | P0 시크릿 폴백 | identity/token.go:54-57 길이 강제 + cmd/api/main.go:83-88 os.Exit(1)
+- DONE | P0 APP_DOMAIN | internal/platform/bootstrap.go:70-72 prod tirpscanr 강제 + compose prod 오버라이드 필수화
+- DONE | P0 퇴역 콘솔 4종 | dashboard 하위 connections/servers/provision/budgets 페이지 삭제 + server/plugins/retired-redirect.ts 301 (curl 301 확인)
+- DONE | P0 퇴역 카탈로그 내비 | layouts/public.vue SaaS 카탈로그 내비 + provision.vue 삭제
+- DONE | P0 compose prod 분리 | docker-compose.yml ${} 매개변수화 + docker-compose.prod.yml 필수 시크릿
+- DONE | P0 /cloud/* 라우트 | main.go:157-167 피처게이트(기본 off, ENABLE_RETIRED_CLOUD_ROUTES)
+- DONE | P1 AFFILIATE_SIGNING_SECRET 배선 | main.go:38-46 resolveAffiliateKey + NewService 전달, prod 32B 강제
+- DONE | P1 useApi 주석 호스트 | useApi.ts:52-53 api.tirpscanr.com
+- DONE | P1 canonical | nuxt.config.ts:15 tirpscanr.com
+- DONE | P1 리브랜드 | package tirpscanner-web, web/ 내 cloudscanr 잔존 0건
+- DONE | P1 dead routeRules | /compare/**·/articles/** 규칙 제거, compare 페이지 실존
+- DONE | P1 admin ops 카드 | admin/index.vue 공급사/피드/제휴/컴플라이언스 재구성
+- DONE | P1 worker 서비스 | docker-compose.yml:85 worker + prod 오버라이드
+- DONE | P1 metrics 네임스페이스 | module_0058.go tirpscanner_http_* + 테스트 단언
+- DONE | P1 compose 포트 | 전체 127.0.0.1 바인드, DISABLE_SECURITY_PLUGIN은 localhost OpenSearch dev 한정(주석 고지)
+- DONE | P2 calculator TCO | 구독 계산기로 재작성, provision.vue 없음
+- DONE | P2 푸터 FTC | en.json footer.disclosureNote "FTC/KFTC" (5로케일)
+- DONE | P2 /go 일원화 | utils/api-urls.ts buildDealUrl + api-urls.test.ts, 수제 조립 0건
+- DONE | P2 lint 게이트 | .github/workflows/ci.yml이 typecheck+test+build를 명시 게이트로 고정 (lint 없음이 명시 상태)
+- DONE | P2 단위 테스트 | api-urls.test.ts resolveUrl/buildDealUrl/세션헤더 커버
+- DONE | P2 Dockerfile.web | 삭제됨 (deploy/docker는 api+worker만)
+- DONE | P2 pnpm 핀 | ci.yml 9.15.0 + packageManager 9.15.0
+- DONE | P2 version 키 | docker-compose.yml에 없음
+- DONE | P1 #38 CI 문서 | CI_CD.md가 실제 ci.yml 2게이트 + Planned 5단계로 기술됨
+- DONE | P1 #39 백업 | BACKUP_RECOVERY.md TARGET 선언 + 미구현 명시
+- DONE | P1 #41 미구현 참조 | cs-migrator PLANNED·cmd/janitor unimplemented 표기, redaction은 module_0055 실구현 참조
+- DONE | P1 문서 13건 | CSV 3건 무잔존·openapi 태그/apex/스키마·어댑터/KMS/사전/토큰/마이그레이션/README/QA 전건 대조 확인
+- DONE | P2 문서 오타·드리프트 전건 | 번호·오타·수치·스펙추록 30건 대조 확인 (FINAL/KNOWN_LIMITATIONS 추록 포함)
+- OPEN(후속) | OpenSearch prod TLS | docker-compose.yml:46-47 주석으로 고지됨
+- OPEN(외부) | 감사 범위 밖 5항 | DNS/TLS·제휴승인·실DB 등 운영자 실행 필요
+
 ## 감사 범위 밖 (미확인)
 
 - 동결 WO 본문 1000건 내용·TRACEABILITY 본문 (개수·파싱만 확인)

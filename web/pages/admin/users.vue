@@ -1,19 +1,19 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Members & Roles" subtitle="Suspend accounts or reassign organization roles. Both actions are audited." />
+    <PageHeader :title="$t('admin.usersTitle')" :subtitle="$t('admin.usersSubtitle')" />
 
     <div class="flex flex-wrap items-center gap-2 text-xs">
-      <span class="text-ink-secondary">Status:</span>
+      <span class="text-ink-secondary">{{ $t('admin.statusFilter') }}</span>
       <select v-model="statusFilter" class="input !w-auto !py-1.5" @change="load">
-        <option value="">All</option>
-        <option value="ACTIVE">Active</option>
-        <option value="SUSPENDED">Suspended</option>
-        <option value="PENDING_VERIFICATION">Pending</option>
+        <option value="">{{ $t('admin.optAll') }}</option>
+        <option value="ACTIVE">{{ $t('admin.optActive') }}</option>
+        <option value="SUSPENDED">{{ $t('admin.optSuspended') }}</option>
+        <option value="PENDING_VERIFICATION">{{ $t('admin.optPending') }}</option>
       </select>
-      <span class="text-ink-secondary ml-auto">{{ total }} members</span>
+      <span class="text-ink-secondary ml-auto">{{ $t('admin.membersCount', { n: total }) }}</span>
     </div>
 
-    <LoadingSkeleton v-if="loading" :rows="4" label="Loading members" />
+    <LoadingSkeleton v-if="loading" :rows="4" :label="$t('admin.loadingUsers')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
@@ -22,12 +22,12 @@
         <table class="table-shell min-w-[720px]">
           <thead>
             <tr>
-              <th class="py-3 px-4">Member</th>
-              <th class="py-3 px-4">Organization</th>
-              <th class="py-3 px-4">Role</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4">Joined</th>
-              <th class="py-3 px-4 text-right">Actions</th>
+              <th class="py-3 px-4">{{ $t('admin.colMember') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colOrg') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colRole') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colStatus') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colJoined') }}</th>
+              <th class="py-3 px-4 text-right">{{ $t('admin.colActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -42,7 +42,7 @@
                   :value="u.role"
                   class="input !w-auto !py-1 !text-[11px]"
                   :disabled="saving === u.id"
-                  aria-label="Change role"
+                  :aria-label="$t('a11y.changeRole')"
                   @change="changeRole(u, ($event.target as HTMLSelectElement).value)"
                 >
                   <option>OWNER</option>
@@ -60,10 +60,10 @@
                   :disabled="saving === u.id"
                   @click="changeStatus(u, 'SUSPENDED')"
                 >
-                  Suspend
+                  {{ $t('admin.suspend') }}
                 </button>
                 <button v-else class="btn-ghost !py-1 !px-2.5 !text-[11px]" :disabled="saving === u.id" @click="changeStatus(u, 'ACTIVE')">
-                  Reactivate
+                  {{ $t('admin.reactivate') }}
                 </button>
               </td>
             </tr>
@@ -73,9 +73,9 @@
     </div>
 
     <div v-if="!loading && !error" class="flex items-center justify-between text-xs text-ink-secondary">
-      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset === 0" @click="page(-1)">← Prev</button>
-      <span>Showing {{ users.length }} of {{ total }}</span>
-      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset + users.length >= total" @click="page(1)">Next →</button>
+      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset === 0" @click="page(-1)">{{ $t('common.prev') }}</button>
+      <span>{{ $t('admin.showingOf', { shown: users.length, total }) }}</span>
+      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset + users.length >= total" @click="page(1)">{{ $t('common.next') }}</button>
     </div>
   </div>
 </template>
@@ -91,7 +91,8 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Members & Roles' })
+const { t, locale } = useI18n()
+useHead(() => ({ title: t('admin.usersTitle') }))
 
 const loading = ref(false)
 const error = ref<ApiError | null>(null)
@@ -107,7 +108,7 @@ const toast = useToast()
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString()
+    return new Date(iso).toLocaleDateString(locale.value)
   } catch {
     return iso
   }
@@ -138,7 +139,7 @@ async function patch(u: AdminUser, body: Record<string, string>) {
   saving.value = u.id
   try {
     await request(`/api/v1/admin/users/${u.id}`, { method: 'PATCH', body })
-    toast.success(`Member ${u.email} updated.`)
+    toast.success(t('admin.toastMemberUpdated', { email: u.email }))
     await load()
   } catch (e) {
     const apiErr = e instanceof ApiError ? e : ApiError.fromUnknown(e)

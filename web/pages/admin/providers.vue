@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Provider Catalog" subtitle="Moderate integration statuses. Changes apply immediately and are audited." />
+    <PageHeader :title="$t('admin.vendorsTitle')" :subtitle="$t('admin.vendorsSubtitle')" />
 
-    <LoadingSkeleton v-if="loading" :rows="4" label="Loading providers" />
+    <LoadingSkeleton v-if="loading" :rows="4" :label="$t('admin.loadingVendors')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
@@ -11,12 +11,12 @@
         <table class="table-shell min-w-[820px]">
           <thead>
             <tr>
-              <th class="py-3 px-4">Provider</th>
-              <th class="py-3 px-4">Pricing API</th>
-              <th class="py-3 px-4">Management API</th>
-              <th class="py-3 px-4">Affiliate</th>
-              <th class="py-3 px-4">Reseller</th>
-              <th class="py-3 px-4 text-right">Save</th>
+              <th class="py-3 px-4">{{ $t('admin.colVendor') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colPricing') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colMgmt') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colAffiliate') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colReseller') }}</th>
+              <th class="py-3 px-4 text-right">{{ $t('admin.colSave') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -41,7 +41,7 @@
                   :disabled="saving === p.slug || !dirty(p)"
                   @click="save(p)"
                 >
-                  {{ saving === p.slug ? 'Saving…' : 'Save' }}
+                  {{ saving === p.slug ? $t('common.saving') : $t('common.save') }}
                 </button>
               </td>
             </tr>
@@ -63,17 +63,18 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Provider Catalog' })
+useHead(() => ({ title: t('admin.vendorsTitle') }))
 
 const statuses = ['VERIFIED', 'PENDING', 'FAILED', 'NOT_SUPPORTED', 'CONTRACT_REQUIRED', 'DISABLED']
-const statusFields = [
-  { key: 'pricing_api_status', label: 'pricing' },
-  { key: 'management_api_status', label: 'management' },
-  { key: 'affiliate_status', label: 'affiliate' },
-  { key: 'reseller_program_status', label: 'reseller' },
-] as const
+const { t } = useI18n()
+const statusFields = computed(() => [
+  { key: 'pricing_api_status', label: t('admin.fieldPricing') },
+  { key: 'management_api_status', label: t('admin.fieldMgmt') },
+  { key: 'affiliate_status', label: t('admin.fieldAffiliate') },
+  { key: 'reseller_program_status', label: t('admin.fieldReseller') },
+] as const)
 
-type Draft = Record<(typeof statusFields)[number]['key'], string>
+type Draft = Record<(typeof statusFields)['value'][number]['key'], string>
 
 const loading = ref(false)
 const error = ref<ApiError | null>(null)
@@ -133,7 +134,7 @@ async function save(p: Provider) {
       providers.value[idx] = res.data
       drafts[p.slug] = snapshot(res.data)
     }
-    toast.success(`${p.name} statuses updated.`)
+    toast.success(t('admin.toastVendorSaved', { name: p.name }))
   } catch (e) {
     const apiErr = e instanceof ApiError ? e : ApiError.fromUnknown(e)
     toast.error(apiErr.message)

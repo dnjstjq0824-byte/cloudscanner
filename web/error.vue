@@ -2,7 +2,7 @@
   <div class="flex flex-col min-h-screen bg-canvas text-ink">
     <header class="border-b border-subtle bg-surface/90">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-        <NuxtLink to="/" class="text-xl font-bold text-brand">
+        <NuxtLink :to="$localePath('/')" class="text-xl font-bold text-brand">
           <span>TirpScanner</span>
         </NuxtLink>
       </div>
@@ -14,10 +14,10 @@
         <h1 class="text-xl font-bold text-ink">{{ headline }}</h1>
         <p class="text-sm text-ink-secondary">{{ detail }}</p>
         <div class="flex justify-center gap-3 pt-2">
-          <button class="btn-ghost" @click="handleError">Go Back</button>
-          <NuxtLink to="/" class="btn-primary">Home</NuxtLink>
+          <button class="btn-ghost" @click="handleError">{{ $t('error.goBack') }}</button>
+          <NuxtLink :to="$localePath('/')" class="btn-primary">{{ $t('error.home') }}</NuxtLink>
         </div>
-        <p v-if="traceId" class="text-[11px] text-ink-secondary font-mono">trace {{ traceId }}</p>
+        <p v-if="traceId" class="text-[11px] text-ink-secondary font-mono">{{ $t('error.trace', { id: traceId }) }}</p>
       </div>
     </main>
   </div>
@@ -29,18 +29,21 @@ import type { NuxtError } from '#app'
 
 const props = defineProps<{ error: NuxtError }>()
 
+const { t } = useI18n()
+const localePath = useLocalePath()
+
 const headline = computed(() => {
   if (props.error.statusCode === 404) {
-    return 'This page drifted off the cloud map'
+    return t('error.notFoundTitle')
   }
-  return 'Something broke on our side'
+  return t('error.genericTitle')
 })
 
 const detail = computed(() => {
   if (props.error.statusCode === 404) {
-    return 'The address may be mistyped, or the resource moved. Rankings, search, and your console are one click away.'
+    return t('error.notFoundBody')
   }
-  return 'Our team has been notified with a trace ID. Try again in a moment, or head back home.'
+  return t('error.genericBody')
 })
 
 const traceId = computed(() => {
@@ -50,6 +53,6 @@ const traceId = computed(() => {
 })
 
 function handleError() {
-  clearError({ redirect: '/' })
+  clearError({ redirect: localePath('/') })
 }
 </script>

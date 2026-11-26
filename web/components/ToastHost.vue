@@ -8,7 +8,7 @@
       role="status"
     >
       <span>{{ t.message }}</span>
-      <button class="opacity-60 hover:opacity-100 shrink-0" :aria-label="'Dismiss notification'" @click="dismiss(t.id)">✕</button>
+      <button class="opacity-60 hover:opacity-100 shrink-0" :aria-label="$t('a11y.dismiss')" @click="dismiss(t.id)">✕</button>
     </div>
   </div>
 </template>

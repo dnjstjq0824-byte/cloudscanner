@@ -5,26 +5,49 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxtjs/i18n'
   ],
+
+  // TirpScanner locales (G_GLOBALIZATION.md): subpath routing (/en/...),
+  // lazy JSON bundles, browser detection with cookie memory.
+  i18n: {
+    baseUrl: 'https://tirpscanr.com',
+    locales: [
+      { code: 'en', language: 'en-US', file: 'en.json', name: 'English' },
+      { code: 'ko', language: 'ko-KR', file: 'ko.json', name: '한국어' },
+      { code: 'ja', language: 'ja-JP', file: 'ja.json', name: '日本語' },
+      { code: 'de', language: 'de-DE', file: 'de.json', name: 'Deutsch' },
+      { code: 'es', language: 'es-ES', file: 'es.json', name: 'Español' }
+    ],
+    defaultLocale: 'en',
+    langDir: 'locales',
+    lazy: true,
+    strategy: 'prefix',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'tirp-locale',
+      redirectOn: 'root'
+    },
+    bundle: {
+      optimizeTranslationDirective: false
+    }
+  },
 
   app: {
     head: {
       titleTemplate: '%s — TirpScanner',
       title: 'TirpScanner: Independent SaaS & AI-Tool Deal Scanner',
       htmlAttrs: {
-        lang: 'en',
         class: 'dark'
       },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Compare SaaS subscription plans, track price drops, and never overpay. Independent rankings, disclosed affiliates.' },
         { name: 'theme-color', content: '#0b0d12' }
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        { rel: 'canonical', href: 'https://tirpscanr.com' },
         { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' },
         {
           rel: 'stylesheet',
@@ -56,20 +79,15 @@ export default defineNuxtConfig({
   // target per environment with NUXT_API_PROXY_TARGET. Production browsers
   // call NUXT_PUBLIC_API_BASE directly (see useApi), so Pages needs no proxy.
   routeRules: {
-    '/': { ssr: true, swr: 300 },
-    // RETIRED 2026-11-26 (TirpScanner pivot): retired pages redirect home.
-    '/search': { redirect: '/' },
-    '/search/**': { redirect: '/' },
-    '/calculator': { redirect: '/' },
-    '/rankings': { redirect: '/' },
-    '/providers': { redirect: '/' },
-    '/providers/**': { redirect: '/' },
-    '/dashboard/connections': { redirect: '/dashboard' },
-    '/dashboard/servers': { redirect: '/dashboard' },
-    '/dashboard/provision': { redirect: '/dashboard' },
-    '/dashboard/budgets': { redirect: '/dashboard' },
-    '/dashboard/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
-    '/admin/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Locales share the same rendering rules ('/' itself is locale-redirected
+    // by @nuxtjs/i18n; retired-page redirects live in server/plugins/).
+    ...Object.fromEntries(
+      ['en', 'ko', 'ja', 'de', 'es'].flatMap((loc) => [
+        [`/${loc}`, { ssr: true, swr: 300 }],
+        [`/${loc}/dashboard/**`, { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } }],
+        [`/${loc}/admin/**`, { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } }]
+      ])
+    ),
     '/api/**': { proxy: `${process.env.NUXT_API_PROXY_TARGET || 'http://localhost:8080'}/api/**` }
   },
 

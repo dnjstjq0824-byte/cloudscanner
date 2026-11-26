@@ -4,9 +4,9 @@ export default defineNuxtRouteMiddleware(async () => {
     await auth.fetchMe()
   }
   if (!auth.isAuthenticated) {
-    return navigateTo('/auth/login')
+    return navigateTo(useLocalePath()('/auth/login'))
   }
   if (!auth.isAdmin) {
-    return navigateTo('/dashboard')
+    return navigateTo(useLocalePath()('/dashboard'))
   }
 })

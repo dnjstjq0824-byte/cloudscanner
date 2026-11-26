@@ -1,17 +1,17 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Audit Logs" subtitle="Append-only trail of billable and administrative operations, newest first." />
+    <PageHeader :title="$t('admin.auditTitle')" :subtitle="$t('admin.auditSubtitle')" />
 
     <div class="flex flex-wrap items-center gap-2 text-xs">
-      <span class="text-ink-secondary">Action:</span>
+      <span class="text-ink-secondary">{{ $t('admin.actionFilter') }}</span>
       <select v-model="actionFilter" class="input !w-auto !py-1.5" @change="reload">
-        <option value="">All actions</option>
+        <option value="">{{ $t('admin.optAllActions') }}</option>
         <option v-for="a in actions" :key="a" :value="a">{{ a }}</option>
       </select>
-      <span class="text-ink-secondary ml-auto">{{ total }} entries</span>
+      <span class="text-ink-secondary ml-auto">{{ $t('admin.entriesCount', { n: total }) }}</span>
     </div>
 
-    <LoadingSkeleton v-if="loading" :rows="5" label="Loading audit logs" />
+    <LoadingSkeleton v-if="loading" :rows="5" :label="$t('admin.loadingAudit')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
@@ -20,11 +20,11 @@
         <table class="table-shell min-w-[760px]">
           <thead>
             <tr>
-              <th class="py-3 px-4">Time</th>
-              <th class="py-3 px-4">Action</th>
-              <th class="py-3 px-4">Actor</th>
-              <th class="py-3 px-4">Target</th>
-              <th class="py-3 px-4">Detail</th>
+              <th class="py-3 px-4">{{ $t('admin.colTime') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colAction') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colActor') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colTarget') }}</th>
+              <th class="py-3 px-4">{{ $t('admin.colDetail') }}</th>
             </tr>
           </thead>
           <tbody class="tabular-nums">
@@ -42,14 +42,14 @@
 
     <EmptyState
       v-if="!loading && !error && entries.length === 0"
-      title="No audit entries yet"
-      message="Billable and admin operations will appear here as they happen."
+      :title="$t('admin.emptyAuditTitle')"
+      :message="$t('admin.emptyAuditBody')"
     />
 
     <div v-if="!loading && !error && entries.length > 0" class="flex items-center justify-between text-xs text-ink-secondary">
-      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset === 0" @click="page(-1)">← Prev</button>
-      <span>Showing {{ entries.length }} of {{ total }}</span>
-      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset + entries.length >= total" @click="page(1)">Next →</button>
+      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset === 0" @click="page(-1)">{{ $t('common.prev') }}</button>
+      <span>{{ $t('admin.showingOf', { shown: entries.length, total }) }}</span>
+      <button class="btn-ghost !py-1.5 !text-xs" :disabled="offset + entries.length >= total" @click="page(1)">{{ $t('common.next') }}</button>
     </div>
   </div>
 </template>
@@ -64,7 +64,8 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Audit Logs' })
+const { t, locale } = useI18n()
+useHead(() => ({ title: t('admin.auditTitle') }))
 
 const actions = [
   'server.provision', 'server.delete', 'connection.create', 'connection.delete',
@@ -89,7 +90,7 @@ function short(id: string): string {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString()
+    return new Date(iso).toLocaleString(locale.value)
   } catch {
     return iso
   }

@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', {
 
     logout() {
       this.clear()
-      navigateTo('/')
+      navigateTo(useLocalePath()('/'))
     },
 
     clear() {

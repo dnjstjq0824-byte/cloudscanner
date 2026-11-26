@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-8">
-    <PageHeader title="Site Settings" subtitle="Runtime flags apply immediately to all traffic." />
+    <PageHeader :title="$t('admin.settingsTitle')" :subtitle="$t('admin.settingsSubtitle')" />
 
-    <LoadingSkeleton v-if="loading" :rows="1" :lines="2" label="Loading settings" />
+    <LoadingSkeleton v-if="loading" :rows="1" :lines="2" :label="$t('admin.loadingSettings')" />
 
     <ErrorState v-else-if="error" :title="error.title" :message="error.message" @retry="load" />
 
@@ -11,26 +11,26 @@
         <label class="flex items-start gap-3 cursor-pointer">
           <input v-model="form.maintenance" type="checkbox" class="mt-1 rounded accent-sky-600" />
           <span>
-            <span class="block text-sm font-bold text-ink">Maintenance mode</span>
+            <span class="block text-sm font-bold text-ink">{{ $t('admin.maintenanceTitle') }}</span>
             <span class="block text-xs text-ink-secondary mt-0.5">
-              While on, user traffic receives 503. Health, readiness, metrics, admin, notices, and site-config stay reachable.
+              {{ $t('admin.maintenanceBody') }}
             </span>
           </span>
         </label>
       </div>
 
       <div class="space-y-1.5">
-        <label for="settings-announcement" class="label">Announcement (shown to operators)</label>
-        <input id="settings-announcement" v-model="form.announcement" type="text" placeholder="e.g. DB failover drill on Friday" class="input" />
+        <label for="settings-announcement" class="label">{{ $t('admin.announcementLabel') }}</label>
+        <input id="settings-announcement" v-model="form.announcement" type="text" :placeholder="$t('admin.announcementPlaceholder')" class="input" />
       </div>
 
-      <p v-if="updatedAt" class="text-[11px] text-ink-secondary">Last updated {{ updatedAt }}</p>
+      <p v-if="updatedAt" class="text-[11px] text-ink-secondary">{{ $t('admin.updatedAt', { date: updatedAt }) }}</p>
 
       <div v-if="formError" class="px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-600 dark:text-rose-300" role="alert">
         {{ formError }}
       </div>
 
-      <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save Settings' }}</button>
+      <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? $t('common.saving') : $t('admin.saveSettings') }}</button>
     </form>
   </div>
 </template>
@@ -46,7 +46,8 @@ definePageMeta({
   middleware: 'admin',
 })
 
-useHead({ title: 'Site Settings' })
+const { t, locale } = useI18n()
+useHead(() => ({ title: t('admin.settingsTitle') }))
 
 const loading = ref(false)
 const error = ref<ApiError | null>(null)
@@ -67,7 +68,7 @@ async function load() {
     form.maintenance = res.data.maintenance_mode
     form.announcement = res.data.announcement
     try {
-      updatedAt.value = new Date(res.data.updated_at).toLocaleString()
+      updatedAt.value = new Date(res.data.updated_at).toLocaleString(locale.value)
     } catch {
       updatedAt.value = res.data.updated_at
     }
@@ -88,7 +89,7 @@ async function save() {
     })
     form.maintenance = res.data.maintenance_mode
     form.announcement = res.data.announcement
-    toast.success('Settings saved and applied.')
+    toast.success(t('admin.toastSettingsSaved'))
   } catch (e) {
     const apiErr = e instanceof ApiError ? e : ApiError.fromUnknown(e)
     formError.value = apiErr.message

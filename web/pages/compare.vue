@@ -76,15 +76,17 @@ const error = ref<ApiError | null>(null)
 const { request } = useApi()
 
 async function load() {
-  if (ids.value.length === 0) {
-    return
-  }
   loading.value = true
   error.value = null
   try {
     const res = await request<ListEnvelope<SKUDetail>>('/api/v1/catalog/skus')
-    const wanted = new Set(ids.value)
-    rows.value = (res.data ?? []).filter((s) => wanted.has(s.id)).slice(0, 6)
+    const all = res.data ?? []
+    if (ids.value.length === 0) {
+      rows.value = all.slice(0, 6)
+    } else {
+      const wanted = new Set(ids.value)
+      rows.value = all.filter((s) => wanted.has(s.id)).slice(0, 6)
+    }
   } catch (e) {
     error.value = e instanceof ApiError ? e : ApiError.fromUnknown(e)
   } finally {

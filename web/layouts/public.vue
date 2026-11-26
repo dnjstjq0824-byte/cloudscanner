@@ -19,6 +19,7 @@
             <NuxtLink :to="$localePath('/offers')" class="hover:text-ink transition">{{ $t('nav.deals') }}</NuxtLink>
             <NuxtLink :to="$localePath('/best-value-rankings')" class="hover:text-ink transition">{{ $t('nav.rankings') }}</NuxtLink>
             <NuxtLink :to="$localePath('/providers')" class="hover:text-ink transition">{{ $t('nav.vendors') }}</NuxtLink>
+            <NuxtLink :to="$localePath('/compare')" class="hover:text-ink transition">{{ $t('nav.compare') }}</NuxtLink>
             <NuxtLink :to="$localePath('/dashboard')" class="hover:text-ink transition">{{ $t('nav.console') }}</NuxtLink>
             <NuxtLink :to="$localePath('/affiliate-disclosure')" class="hover:text-ink transition">{{ $t('nav.disclosure') }}</NuxtLink>
           </nav>
@@ -44,6 +45,7 @@
         <NuxtLink :to="$localePath('/offers')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-ink" @click="menuOpen = false">{{ $t('nav.deals') }}</NuxtLink>
         <NuxtLink :to="$localePath('/best-value-rankings')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-ink" @click="menuOpen = false">{{ $t('nav.rankings') }}</NuxtLink>
         <NuxtLink :to="$localePath('/providers')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-ink" @click="menuOpen = false">{{ $t('nav.vendors') }}</NuxtLink>
+        <NuxtLink :to="$localePath('/compare')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-ink" @click="menuOpen = false">{{ $t('nav.compare') }}</NuxtLink>
         <NuxtLink :to="$localePath('/affiliate-disclosure')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-ink" @click="menuOpen = false">{{ $t('nav.disclosure') }}</NuxtLink>
         <NuxtLink :to="$localePath('/dashboard')" class="block px-3 py-2.5 rounded-lg hover:bg-elevated text-brand" @click="menuOpen = false">{{ $t('nav.openConsole') }}</NuxtLink>
       </nav>

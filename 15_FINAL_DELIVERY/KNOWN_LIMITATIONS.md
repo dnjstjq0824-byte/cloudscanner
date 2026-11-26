@@ -23,3 +23,10 @@ In strict compliance with Articles 4, 11, 24, 27, and 29, CloudScanr explicitly 
 4. **Live External Billable Server Provisioning Tests (`BLOCKED_EXTERNAL_APPROVAL` Until Live Sandbox Authorized)**:
    - All 22 mandatory server provisioning safety scenarios (Article 24, `SAF-01` to `SAF-22`) are fully specified and designed to run deterministically against the local/CI Provider Fault Simulator (`internal/testutil/providersim`).
    - Executing live billable VM creation/deletion against production DigitalOcean, UpCloud, Vultr, or Hetzner accounts (`Tier C Live Sandbox Testing`) is gated behind explicit budget authorization (`ALLOW_LIVE_BILLABLE_TESTS=true`) to prevent unauthorized cloud charges.
+
+## Addendum 2026-11-26 (TirpScanner pivot)
+Disclosures above are preserved as the 2026-10-28 record. Under the pivot, item 4 (live
+billable provisioning tests) is moot — provisioning scope is retired. Items 1–3 remain
+relevant in reframed form: SaaS/AI-tool vendor affiliate approvals, non-cash reward
+programs, and vendors without public deal/price feeds still require operator verification
+and must never be fabricated. See `TIRPSCANNER_PIVOT.md`.

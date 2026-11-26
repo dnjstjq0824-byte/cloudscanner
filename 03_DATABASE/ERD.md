@@ -1,7 +1,9 @@
-# ERD.md — CloudScanr PostgreSQL 16 Entity-Relationship Diagram (49 Tables Across 7 Domains)
+# ERD.md — TirpScanner PostgreSQL 16 Entity-Relationship Diagram (49 Tables Across 7 Domains)
 
-**Document ID:** `CS-DB-001`  
-**Database Engine:** PostgreSQL 16 (Dedicated Instance — Zero TreeScan Dependency)
+**Document ID:** `CS-DB-001`
+**Database Engine:** PostgreSQL 16 (Dedicated Instance)
+
+> **Pivot addendum (2026-11-26):** Refreshed for TirpScanner. Legacy table names are retained in migrations (docs never edit migrations SQL); conceptually, Provider tables now represent SaaS vendors / AI tools, Pricing tables represent subscription plan prices and deal snapshots, and the Cloud Management domain (8 tables) is RETIRED scope — retained in migrations as legacy with no live reads/writes. Live scope: Identity, Vendors, Plan pricing & deals, Affiliate, Search & Content, Operations.
 
 ---
 
@@ -40,6 +42,7 @@ erDiagram
     commissions ||--o{ commission_adjustments : adjusts
     affiliate_payouts ||--o{ commissions : settles
 
+    %% ── RETIRED 2026-11-26: BYOC Cloud Management relations below are legacy; no live reads/writes ──
     organizations ||--o{ cloud_connections : connects_byoc
     cloud_connections ||--|| provider_credentials_metadata : encrypts_kms
     cloud_connections ||--o{ cloud_resources : manages
@@ -59,15 +62,15 @@ erDiagram
 
 ---
 
-## 2. Domain Table Count & Compliance Summary (Article 18)
+## 2. Domain Table Count & Compliance Summary
 
-| Domain | Required Tables (Article 18) | Implemented SQL Migration | Total Tables |
-| :--- | :--- | :--- | :--- |
-| **1. Identity** | `users`, `organizations`, `organization_members`, `roles`, `sessions`, `auth_identities` | `000002_identity_domain.up.sql` | **6** |
-| **2. Providers** | `cloud_providers`, `provider_regions`, `provider_products`, `provider_capabilities`, `provider_data_sources` | `000003_providers_domain.up.sql` | **5** |
-| **3. Pricing** | `product_skus`, `product_specs`, `price_snapshots`, `price_components`, `billing_terms`, `promotions`, `fx_rates`, `tax_policies`, `price_sync_jobs` | `000004_pricing_domain.up.sql` | **9** |
-| **4. Affiliate** | `affiliate_programs`, `affiliate_accounts`, `affiliate_campaigns`, `affiliate_links`, `affiliate_clicks`, `affiliate_conversions`, `commissions`, `commission_adjustments`, `affiliate_payouts` | `000005_affiliate_domain.up.sql` | **9** |
-| **5. Cloud Management** | `cloud_connections`, `provider_credentials_metadata`, `cloud_resources`, `resource_operations`, `operation_approvals`, `cloud_usage_snapshots`, `budget_policies`, `resource_reconciliations` | `000006_cloud_management_domain.up.sql` | **8** |
-| **6. Search & Content** | `search_events`, `comparison_lists`, `favorites`, `price_alerts`, `articles`, `provider_reviews` | `000007_search_and_content_domain.up.sql` | **6** |
-| **7. Operations** | `audit_logs`, `background_jobs`, `outbox_events`, `admin_actions`, `feature_flags`, `system_settings` | `000008_operations_domain.up.sql` | **6** |
-| **Total** | **All 49 Mandatory Domain Tables + 1 Materialized View (`mv_daily_affiliate_yield`)** | `migrations/000001` ~ `000011` (+ `down_migrations_reference/000012` rollback reference, kept outside `migrations/` so container initdb never executes it) | **49 Tables + 1 MV** |
+| Domain | Required Tables | Implemented SQL Migration (historical) | Total Tables | Scope |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Identity** | `users`, `organizations`, `organization_members`, `roles`, `sessions`, `auth_identities` | `000002_identity_domain.up.sql` | **6** | LIVE |
+| **2. Vendors** (legacy: Providers) | `cloud_providers`, `provider_regions`, `provider_products`, `provider_capabilities`, `provider_data_sources` | `000003_providers_domain.up.sql` | **5** | LIVE (SaaS vendors / AI tools) |
+| **3. Plan Pricing & Deals** (legacy: Pricing) | `product_skus`, `product_specs`, `price_snapshots`, `price_components`, `billing_terms`, `promotions`, `fx_rates`, `tax_policies`, `price_sync_jobs` | `000004_pricing_domain.up.sql` | **9** | LIVE (subscription plans, deal snapshots) |
+| **4. Affiliate** | `affiliate_programs`, `affiliate_accounts`, `affiliate_campaigns`, `affiliate_links`, `affiliate_clicks`, `affiliate_conversions`, `commissions`, `commission_adjustments`, `affiliate_payouts` | `000005_affiliate_domain.up.sql` | **9** | LIVE (core monetization) |
+| **5. Cloud Management** | `cloud_connections`, `provider_credentials_metadata`, `cloud_resources`, `resource_operations`, `operation_approvals`, `cloud_usage_snapshots`, `budget_policies`, `resource_reconciliations` | `000006_cloud_management_domain.up.sql` | **8** | **RETIRED 2026-11-26 (BYOC removed)** |
+| **6. Search & Content** | `search_events`, `comparison_lists`, `favorites`, `price_alerts`, `articles`, `provider_reviews` | `000007_search_and_content_domain.up.sql` | **6** | LIVE |
+| **7. Operations** | `audit_logs`, `background_jobs`, `outbox_events`, `admin_actions`, `feature_flags`, `system_settings` | `000008_operations_domain.up.sql` | **6** | LIVE |
+| **Total** | **41 live tables + 8 retired legacy tables + 1 Materialized View (`mv_daily_affiliate_yield`)** | `migrations/000001` ~ `000011` (+ `down_migrations_reference/000012` rollback reference, kept outside `migrations/` so container initdb never executes it) | **49 Tables + 1 MV** | |

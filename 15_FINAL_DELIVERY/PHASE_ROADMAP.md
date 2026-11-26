@@ -14,3 +14,12 @@
 | **Phase 8** | **글로벌 확장 (Global Expansion & SEO)** | `WO-CS-0751` ~ `0800` | Phase 3 & 7 Sign-off | 5 locales (`en`, `ko`, `ja`, `de`, `es`), live multi-currency FX + local VAT/GST, verified customer reviews, YABS benchmarks. | Global Edge CDN |
 | **Phase 9** | **상용화 감사 (Commercial Security & QA Audit)** | `WO-CS-0851` ~ `0950` | Phase 1–8 Complete | 100% pass on 22 safety scenarios, k6 1,500 RPS load test, IDOR/SSRF penetration test, PITR DR restore drill. | Pre-Launch Gate |
 | **Phase 10** | **정식 운영·확장 (GA Launch & Future Reseller)** | `WO-CS-0951` ~ `1000` | Phase 9 Independent Audit | Independent Zero-Trust Audit sign-off, GA production launch, and post-contract B2B Reseller evaluation. | Global General Availability |
+
+## Addendum 2026-11-26 (TirpScanner pivot)
+Table above preserved as the CloudScanr-era record. Under the pivot to TirpScanner
+(SaaS/AI-tool affiliate deal scanner): Phases 5–7 (BYOC connection, provisioning, advanced
+cloud ops) are RETIRED; Phase 2 reframed to deal-scanner catalog/search MVP on
+`tirpscanr.com` (registered; wiring pending); Phase 8 drops YABS server benchmarks (content/SEO expansion
+kept); Phase 9 drops the 22 provisioning safety scenarios and live-VM sandbox gate
+(search/affiliate/security/load E2E kept); Phase 10 reseller evaluation stays
+post-contract only. See `TIRPSCANNER_PIVOT.md`.

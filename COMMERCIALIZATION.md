@@ -111,10 +111,9 @@ Public: `/`, `/search`, `/calculator`, `/rankings`, `/providers`,
 `useApi`, `useTheme`, `useToast`; Pinia `auth` store; `auth`/`admin`/`guest`
 middleware. Breakpoints verified: 360 / 768 / 1280 (see §6).
 
-## 5. Data pipeline E2E
+## 3. Data pipeline E2E
 
-Register → login → Bearer session → connect cloud (KMS-sealed) → set budget →
-estimate TCO → sign HMAC approval → execute provision (idempotent, gates
+Register — login — Bearer session — connect cloud (KMS-sealed) — set budget — estimate TCO — sign HMAC approval — execute provision (idempotent, gates
 enforced) → inventory + audit trail → admin moderation + notices → storefront
 banners. Pricing harvest runs on worker boot + 15-minute cadence. Seeds:
 11 DDL migrations + provider/role/tax/FX seeds; in-memory catalog (18
@@ -160,3 +159,38 @@ trail; the ledger above is the forward SSOT.
    confirm the audit trail records the mutation.
 6. Leave maintenance mode off except during windows; confirm `/api/v1/notices`
    banners render on the storefront.
+
+---
+
+## 9. Pivot addendum (2026-11-26): CloudScanr → TirpScanner
+
+Sections 1–8 above are the preserved 2026-11-18 CloudScanr
+commercialization cut (historical record — do not rewrite). This addendum is
+the forward record for the pivot to **TirpScanner**, a global SaaS/AI-tool &
+software affiliate deal scanner. Full decision record:
+`TIRPSCANNER_PIVOT.md`.
+
+- **Brand/domains:** CloudScanr → TirpScanner. Apex `tirpscanr.com` is
+  registered (wiring pending); `api.tirpscanr.com`, `www.tirpscanr.com` ASSUMED.
+  `DEPLOY.md` carries the updated domains; toolchain is unchanged.
+- **Live scope:** SaaS/AI-tool catalog, deal scan / price-drop detection
+  (coupons, promos, plan-price normalization), affiliate monetization
+  (`/go/*`, attribution, postback/CSV reconciliation, commission ledger),
+  content hub (comparisons, rankings, buying guides), admin & affiliate
+  operations, platform security and DevOps.
+- **Retired scope:** cloud-infrastructure catalog, Cloud Account Connection
+  (BYOC), Cloud Provisioning (server creation), Cloud Management (instance
+  lifecycle, power/resize/backup/firewall/SSH/IP/deletion). The §1 "Servers
+  domain shipped" gate, §2 BYOC state row, §3 `/api/v1/cloud/*` BYOC/server
+  endpoints, §4 console server pages (`/dashboard/connections`,
+  `/dashboard/servers`, `/dashboard/provision`, `/dashboard/budgets`), and
+  the §3 provision pipeline are **retired history**, not live scope. No new
+  work targets them; no live server actions exist.
+- **Revised adapter law:** affiliate adapter — LIVE; catalog/deal-ingestion
+  adapter (historical `pricing` package name) — LIVE; management (BYOC)
+  adapter — RETIRED; reseller adapter — RETIRED (never activated).
+- **Living-doc updates in this pivot:** `README.md` and `START_HERE.md`
+  rewritten for TirpScanner; `DEPLOY.md` domains/branding updated;
+  `TIRPSCANNER_PIVOT.md` created. Frozen records untouched:
+  `11_WORK_ORDERS_0001_TO_1000/`, `MANIFEST.json`, `FILE_CHECKSUMS.sha256`,
+  `15_FINAL_DELIVERY/REQUIREMENTS_TRACEABILITY.csv`.

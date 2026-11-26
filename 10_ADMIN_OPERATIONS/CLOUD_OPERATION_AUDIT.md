@@ -1,3 +1,5 @@
+> **RETIRED SCOPE — TirpScanner pivot (2026-11-26):** BYOC operation auditing, drift reconciliation, and connection freeze were removed from live scope. This file is CloudScanr-era history, preserved as record; do not build from it. Live admin operations (catalog moderation, payout reconciliation) are defined in `TIRPSCANNER_PIVOT.md` at the repository root.
+
 # CLOUD_OPERATION_AUDIT.md — BYOC Operation Auditing, Drift Reconciliation & Incident Freeze
 **Document ID:** `CS-ADM-004`
 ## 1. Global BYOC Audit & Emergency Freeze

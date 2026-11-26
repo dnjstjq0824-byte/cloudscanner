@@ -1,12 +1,14 @@
-# PROVIDER_ADAPTER_CONTRACT.md — Four-Adapter Go Interface Specification (Article 6)
+# PROVIDER_ADAPTER_CONTRACT.md — Two-Adapter Go Interface Specification (revised; Management/Reseller retired)
 
 **Document ID:** `CS-API-002`
+
+> **Pivot addendum (2026-11-26):** The four-adapter law is revised for TirpScanner. `AffiliateAdapter` and `CatalogAdapter` (deal ingestion; succeeds `PricingAdapter`) are LIVE. `ManagementAdapter` (BYOC) and `ResellerAdapter` are RETIRED — do not implement or extend; their signatures are preserved in git history.
 
 ---
 
 ## 1. Strict Package & Credential Separation Rule
 
-CloudScanr strictly prohibits mixing Affiliate, Pricing, Management (BYOC), and Reseller responsibilities in a single client struct. All provider integrations in `internal/adapters/` must implement the segregated Go interfaces defined below:
+TirpScanner strictly prohibits mixing Affiliate and Catalog/Deal-Ingestion responsibilities in a single client struct. All vendor integrations in `internal/adapters/` must implement the segregated Go interfaces defined below:
 
 ```go
 package adapters
@@ -14,11 +16,9 @@ package adapters
 import (
     "context"
     "net/http"
-    "time"
-    "github.com/shopspring/decimal"
 )
 
-// 1. AffiliateAdapter — Outbound Tracking & Conversion Reconciliation ONLY
+// 1. AffiliateAdapter — Outbound Tracking & Conversion Reconciliation ONLY (LIVE)
 type AffiliateAdapter interface {
     ProviderSlug() string
     BuildTrackingURL(ctx context.Context, req TrackingLinkRequest) (string, error)
@@ -26,30 +26,17 @@ type AffiliateAdapter interface {
     ParseReconciliationCSV(ctx context.Context, csvBytes []byte) ([]RawConversionEvent, error)
 }
 
-// 2. PricingAdapter — Public or System-Authenticated Catalog Harvesting ONLY
-type PricingAdapter interface {
+// 2. CatalogAdapter — SaaS/AI-Tool Catalog & Deal Harvesting ONLY (LIVE; succeeds PricingAdapter)
+type CatalogAdapter interface {
     ProviderSlug() string
-    FetchRegions(ctx context.Context) ([]RawProviderRegion, error)
-    FetchPlansAndPrices(ctx context.Context) (*RawCatalogPayload, error)
-}
-
-// 3. ManagementAdapter — User-Authorized BYOC Infrastructure Lifecycle ONLY
-// Credentials passed here are decrypted in-memory from KMS immediately prior to call and zeroed on return.
-type ManagementAdapter interface {
-    ProviderSlug() string
-    Capabilities() ProviderCapabilitySet
-    VerifyCredentials(ctx context.Context, cred DecryptedCredential) (*AccountIdentity, error)
-    ListServers(ctx context.Context, cred DecryptedCredential) ([]RemoteServerState, error)
-    GetServerByTagOrID(ctx context.Context, cred DecryptedCredential, opTag string, externalID string) (*RemoteServerState, error)
-    CreateServer(ctx context.Context, cred DecryptedCredential, req ProvisionRequest) (*RemoteProvisionResult, error)
-    ExecutePowerAction(ctx context.Context, cred DecryptedCredential, externalID string, action PowerAction) error
-    ResizeServer(ctx context.Context, cred DecryptedCredential, externalID string, newPlanCode string, resizeDisk bool) error
-    DeleteServer(ctx context.Context, cred DecryptedCredential, externalID string) error
-}
-
-// 4. ResellerAdapter — Disabled by default in V1; requires formal executed Reseller Contract
-type ResellerAdapter interface {
-    ProviderSlug() string
-    IsContractActive() bool // Returns false for all providers in V1 until legal sign-off
+    FetchToolsAndPlans(ctx context.Context) (*RawCatalogPayload, error)
+    FetchDealsAndPromotions(ctx context.Context) (*RawDealPayload, error)
 }
 ```
+
+---
+
+## 2. Retired Adapters (history — do not implement)
+
+- **ManagementAdapter (RETIRED 2026-11-26):** Former BYOC interface (`VerifyCredentials`, `ListServers`, `CreateServer`, `ExecutePowerAction`, `ResizeServer`, `DeleteServer`). Retired with BYOC removal; no user cloud credentials exist to pass to it.
+- **ResellerAdapter (RETIRED 2026-11-26):** Never activated in V1 (all `IsContractActive()` returned false); removed with the pivot rather than carried forward.

@@ -1,3 +1,5 @@
+> **RETIRED SCOPE — TirpScanner pivot (2026-11-26):** BYOC account connection, server provisioning, and cloud server management were removed from live scope. This file is CloudScanr-era history, preserved as record; do not build from it. Live scope (SaaS/AI-tool catalog, deal scan / price-drop detection, affiliate monetization) is defined in `TIRPSCANNER_PIVOT.md` at the repository root.
+
 # BYOC_ARCHITECTURE.md — Bring-Your-Own-Cloud Multi-Tenant Architecture (Article 12)
 **Document ID:** `CS-CM-001`
 ## 1. Core BYOC Principles

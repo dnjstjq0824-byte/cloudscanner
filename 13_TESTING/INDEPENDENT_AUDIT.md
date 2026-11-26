@@ -1,5 +1,6 @@
 # INDEPENDENT_AUDIT.md — Zero-Trust Independent Audit Protocol (Article 27 & 29)
 **Document ID:** `CS-TST-006`
+> TirpScanner pivot (2026-11-26): checklist kept; counts describe the frozen audit state and BYOC/provisioning artifacts are retired history. See `TIRPSCANNER_PIVOT.md`.
 ## 1. Independent Audit Agent Checklist
 - Verify `00_MARKET_RESEARCH/` matrices contain accurate statuses (`VERIFIED`, `REQUIRES_APPLICATION`, `CONTRACT_REQUIRED`, `NOT_SUPPORTED`).
 - Verify `01_A_TO_Z_BLUEPRINT/` contains all 26 files (`A` to `Z`) with all 15 required sections.

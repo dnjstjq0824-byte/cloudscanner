@@ -1,3 +1,5 @@
+> **RETIRED SCOPE — TirpScanner pivot (2026-11-26):** BYOC account connection, server provisioning, and cloud server management were removed from live scope. This file is CloudScanr-era history, preserved as record; do not build from it. Live scope (SaaS/AI-tool catalog, deal scan / price-drop detection, affiliate monetization) is defined in `TIRPSCANNER_PIVOT.md` at the repository root.
+
 # TOKEN_SECURITY.md — KMS Envelope Encryption, Memory Zeroing & Token Lifecycle
 **Document ID:** `CS-CM-002`
 ## 1. Cryptographic Storage Specification (`provider_credentials_metadata`)

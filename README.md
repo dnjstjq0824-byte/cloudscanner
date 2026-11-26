@@ -1,80 +1,99 @@
-# CloudScanr — Global Cloud Price Comparison, Affiliate Monetization & BYOC Multi-Cloud Management Platform
+# TirpScanner — Global SaaS/AI-Tool & Software Affiliate Deal Scanner
 
-**Project Code:** `BN-CLOUDSCANR-GEMINI4-ARGON-MASTER-BLUEPRINT-1000-001`  
-**Version:** `1.0.0`  
+**Project Code:** `BN-TIRPSCANNER-MASTER-BLUEPRINT-10-02`  
+**Version:** `2.0.0` (TirpScanner pivot, 2026-11-26)  
 **Architecture Paradigm:** Modular Go Monolith + Async Worker Fleet + Nuxt 3 SSR + PostgreSQL 16 + OpenSearch 2.17  
-**Platform Independence:** 100% Independent of TreeScan (Dedicated Domain, Auth, DB, Search, Backend, Admin, CI/CD)
+**Platform Independence:** 100% Independent standalone brand (Dedicated Domain, Auth, DB, Search, Backend, Admin, CI/CD)
 
-> **Commercialization cut (2026-11-18):** the implementation ledger in
-> [`COMMERCIALIZATION.md`](COMMERCIALIZATION.md) is the authoritative record of what is
-> live: gated server provisioning, admin console (members, catalog, audit, notices,
-> settings), idempotent mutations, restart-safe KMS, and the responsive token-driven UI.
-> Blueprint directories below remain the design SSOT; where they predate the cut, the
-> ledger's implemented-vs-planned status wins.
+> **Pivot notice (2026-11-26):** this repository pivoted from CloudScanr
+> (cloud price comparison + BYOC multi-cloud management) to **TirpScanner**,
+> a global SaaS/AI-tool & software affiliate deal scanner. The pivot decision
+> record is [`TIRPSCANNER_PIVOT.md`](TIRPSCANNER_PIVOT.md); live domains
+> are `tirpscanr.com` (registered; wiring pending), `api.tirpscanr.com`
+> and `www.tirpscanr.com` (ASSUMED).
+> The [`COMMERCIALIZATION.md`](COMMERCIALIZATION.md) 2026-11-18 CloudScanr cut
+> is preserved as history; its 2026-11-26 addendum is the forward record.
+> Blueprint directories below remain the design archive; where they describe
+> cloud-infrastructure catalog, BYOC, provisioning, or server management as
+> live scope, that scope is **RETIRED** — the live scope is the SaaS/AI-tool
+> catalog, deal scan / price-drop detection, and affiliate monetization.
 
 ---
 
-## 1. Platform Overview & Core Services (Article 2)
+## 1. Platform Overview & Core Services
 
-CloudScanr unifies global cloud infrastructure discovery, transparent total-cost-of-ownership (TCO) comparison, compliant affiliate monetization, and Bring-Your-Own-Cloud (BYOC) server lifecycle management in a single platform:
+TirpScanner (**Tirp** = Tool Indexing & Ranking Platform) unifies global SaaS/AI-tool and software discovery, deal scanning
+with price-drop detection, transparent plan/price comparison, compliant
+affiliate monetization, and content-driven rankings in a single platform:
 
 | Service ID | Service Name | Core Capabilities |
 | :--- | :--- | :--- |
-| **Service 1** | **Global Cloud Search** | Real-time multi-provider search across VPS, Shared/Dedicated CPU Cloud VMs, GPU Servers, Bare Metal, Object/Block Storage, Managed DB, Kubernetes, Load Balancers, CDN, Backups, Managed/WordPress/Developer Hosting, and AI Infrastructure. |
-| **Service 2** | **Cloud Price Comparison** | 36-dimension price normalization engine separating raw provider rates from usage-scenario estimates (hourly, 730h vs calendar month, bandwidth egress overage, IPv4 fees, backups, VAT/GST, live FX rates, freshness indicators). |
+| **Service 1** | **Global SaaS/AI-Tool Search** | Real-time search across SaaS categories, AI tools (LLM apps, agents, image/video/audio, productivity, dev tools), and downloadable software, with category, platform, pricing-model, and region facets. |
+| **Service 2** | **Deal Scan & Price-Drop Detection** | Continuous deal ingestion, coupon/promo tracking, plan-price normalization (monthly vs annual vs lifetime, seats, usage tiers, VAT/GST, live FX rates), price-drop alerts, and freshness indicators. |
 | **Service 3** | **Affiliate Marketplace** | Compliant affiliate link routing (`/go/{link_slug}`), `SubID`/`ClickID` injection, bot filtering, conversion postback webhook & CSV reconciliation, double-entry Commission Ledger, and FTC/Fair-Trade disclosure badges. |
-| **Service 4** | **Cloud Account Connection (BYOC)** | Tenant-isolated connection of user-owned cloud accounts via official OAuth 2.0 or scoped API tokens, protected with KMS Envelope Encryption, ownership verification, and read/write scope separation. |
-| **Service 5** | **Cloud Provisioning** | Explicit cost-approved server creation across supported providers with idempotency keys, asynchronous job state tracking, timeout reconciliation (preventing double provisioning), and immutable audit trails. |
-| **Service 6** | **Cloud Management** | Unified multi-cloud console for instance status, specs, power actions (boot, graceful shutdown, reboot, power cycle), resizing, backups/snapshots, firewalls, SSH keys, IP management, and safe deletion gates. |
-| **Service 7** | **Creator & Content Hub** | Reproducible YABS/Sysbench benchmark reports, deployment tutorials, provider reviews, and regional latency guides with Schema.org structured data. |
-| **Service 8** | **Admin & Affiliate Operations** | Central operations console for provider catalog sync health, stale price alerts, affiliate campaign/payout reconciliation, BYOC operation audits, security incident monitoring, and SEO quality control. |
+| **Service 4** | **Creator & Content Hub** | Tool comparisons, deal roundups, review methodology, buying guides, and alternatives pages with Schema.org structured data. |
+| **Service 3** | **Admin & Affiliate Operations** | Central operations console for catalog/deal-ingestion sync health, stale-deal alerts, affiliate campaign/payout reconciliation, security incident monitoring, and SEO quality control. |
+
+### Retired scope (CloudScanr era, no longer live)
+
+Cloud Account Connection (BYOC), Cloud Provisioning (server creation), and
+Cloud Management (instance lifecycle, power actions, resizing, backups,
+firewalls, SSH keys, IP management, deletion gates) are **RETIRED**. Docs,
+APIs, and UI flows describing them are historical. No new work targets them.
 
 ---
 
-## 2. Strict Separation of the 4 Integration Adapters (Article 6)
+## 2. Revised Adapter Law (affiliate + catalog/deal-ingestion live; management/reseller retired)
 
-CloudScanr enforces strict interface and package separation across four distinct provider integration adapters in `internal/adapters/`:
+TirpScanner enforces strict interface and package separation across provider
+integration adapters in `internal/adapters/`. Two adapters are live; two are
+retired:
 
 ```
 +-----------------------------------------------------------------------------------+
-|                        CloudScanr Core Application Layer                          |
+|                        TirpScanner Core Application Layer                         |
 +-------------------+-------------------+---------------------+---------------------+
-| Affiliate Adapter |  Pricing Adapter  | Management Adapter  |  Reseller Adapter   |
-| (Monetization)    | (Catalog & Rates) | (BYOC User Account) | (Future Contracted) |
+| Affiliate Adapter | Catalog/Deal-     | Management Adapter  |  Reseller Adapter   |
+| (Monetization)    | Ingestion Adapter | (BYOC) — RETIRED    | (Future) — RETIRED  |
+| LIVE              | (Catalog & Deals) |                     |                     |
+|                   | LIVE              |                     |                     |
 +-------------------+-------------------+---------------------+---------------------+
-| - Link Builder    | - Public API Poll | - OAuth2 / API Key  | - Disabled by       |
-| - SubID/ClickID   | - Auth API Poll   | - Create/Boot/Stop  |   default in V1     |
-| - Postback Ingest | - Price Snapshot  | - Resize/Backup     | - Requires formal   |
-| - CSV Reconcile   | - Spec Normalizer | - Delete Approval   |   Reseller Agreement|
+| - Link Builder    | - Public API Poll | - RETIRED: no new   | - RETIRED: never    |
+| - SubID/ClickID   | - Feed/CSV Import |   BYOC connections, |   activated; no     |
+| - Postback Ingest | - Deal Snapshot   |   provisioning, or  |   resale or re-bill |
+| - CSV Reconcile   | - Plan Normalizer |   server operations |   without executed  |
 +-------------------+-------------------+---------------------+---------------------+
 ```
 
-1. **Affiliate Adapter (`internal/adapters/affiliate`)**: Handles outbound tracking URLs, campaign parameters, click telemetry, conversion postbacks, and network reporting APIs (Impact, CJ, PartnerStack, Custom). Does **not** touch server infrastructure.
-2. **Pricing Adapter (`internal/adapters/pricing`)**: Harvests SKU specifications, regional availability, and raw pricing from official APIs or documented public price books. Runs on CloudScanr's system credentials or unauthenticated public endpoints.
-3. **Management Adapter (`internal/adapters/management`)**: Executes infrastructure operations strictly on behalf of an authenticated user who has connected their own cloud account (BYOC) and granted explicit approval.
-4. **Reseller Adapter (`internal/adapters/reseller`)**: Reserved interface for future direct resale under formal legal agreements. Never activated without explicit contract verification.
+1. **Affiliate Adapter (`internal/adapters/affiliate`) — LIVE**: Handles outbound tracking URLs, campaign parameters, click telemetry, conversion postbacks, and network reporting APIs (Impact, CJ, PartnerStack, Custom). Does **not** touch server infrastructure.
+2. **Catalog/Deal-Ingestion Adapter (`internal/adapters/pricing`) — LIVE**: Harvests SaaS/AI-tool listings, plan specifications, deal/coupon feeds, regional availability, and raw pricing from official APIs or documented public feeds. Runs on TirpScanner's system credentials or unauthenticated public endpoints. (Package name `pricing` is a historical label; its live role is catalog and deal ingestion.)
+3. **Management Adapter (`internal/adapters/management`) — RETIRED**: Formerly executed infrastructure operations on user-connected cloud accounts (BYOC). Retired with the pivot; no new connections, provisioning, or server operations.
+4. **Reseller Adapter (`internal/adapters/reseller`) — RETIRED**: Reserved interface that was never activated. Retired; never resell or re-bill third-party infrastructure or software without an executed Partner/Reseller contract.
 
 ---
 
-## 3. Repository & Blueprint Directory Map (Article 25)
+## 3. Repository & Blueprint Directory Map
 
-- `START_HERE.md` — Mandatory 19-step onboarding and execution protocol for engineering agents.
-- `README.md` — Executive architecture overview and package guide.
-- `MANIFEST.json` — Machine-readable inventory of all files, sizes, categories, and SHA-256 digests.
-- `FILE_CHECKSUMS.sha256` — Standard `sha256sum -c` compatible integrity file.
-- `00_MARKET_RESEARCH/` — Deep due diligence on 18+ cloud providers, 5+ competitors, individual Korean developer affiliate eligibility, pricing APIs, management APIs, and partner/reseller programs.
-- `01_A_TO_Z_BLUEPRINT/` — 26 exhaustive technical specifications (`A_ARCHITECTURE.md` through `Z_ZERO_TRUST.md`).
-- `02_SYSTEM_ARCHITECTURE/` — Component topology, Mermaid/ASCII system diagrams, data flows, Kubernetes/Cloudflare deployment architecture, and STRIDE threat model.
-- `03_DATABASE/` — Complete Entity-Relationship Diagram (`ERD.md`), `TABLE_DICTIONARY.md`, `INDEX_DESIGN.md`, 11 executable PostgreSQL 16 DDL migrations (`migrations/000001`–`000011`), and the rollback reference (`down_migrations_reference/000012`).
-- `04_API_SPECIFICATION/` — Full OpenAPI 3.1 specification (`openapi.yaml`) covering all 22 API groups with per-path implemented/planned status, adapter contracts, and API test suites.
-- `05_UXUI/` — Desktop & Mobile wireframes, interaction specs, component states, design system tokens, and `SCREEN_INVENTORY.csv` for all 57 screens.
-- `06_PRICING_ENGINE/` — 36-field normalization rules, multi-currency FX & tax policies, TCO scenario calculator, and freshness state machine.
-- `07_AFFILIATE_ENGINE/` — Click attribution, `SubID`/`ClickID` cryptographic signing, postback/CSV reconciliation, double-entry commission ledger, and anti-fraud compliance.
-- `08_CLOUD_MANAGEMENT/` — BYOC architecture, KMS envelope encryption, idempotent provisioning state machine, day-2 resource operations, budget controls, and provider capability matrix.
-- `09_SECURITY/` — RBAC/ABAC IAM model, KMS secret lifecycle, PostgreSQL RLS tenant isolation, financial blast-radius controls, and security test suites.
-- `10_ADMIN_OPERATIONS/` — Admin console workflows, catalog discrepancy resolution, affiliate payout reconciliation, and cloud operation auditing.
-- `11_WORK_ORDERS_0001_TO_1000/` — Master index, dependency DAG, and 1,000 individual executable Work Orders (`individual/WO-CS-0001.md` to `WO-CS-1000.md`).
-- `12_AGENT_EXECUTION/` — Multi-agent orchestration directive, 14-agent role matrix, file ownership locks, handoff protocol, and audit reporting templates.
-- `13_TESTING/` — Master test matrix, acceptance criteria, Search/Affiliate/Provisioning/Security E2E specs (including all 22 mandatory server safety test scenarios), and independent audit procedures.
-- `14_DEVOPS/` — GitHub Actions CI/CD pipelines, Prometheus/Grafana/OpenTelemetry monitoring, PITR backup/recovery, infrastructure cost management, and production runbooks.
-- `15_FINAL_DELIVERY/` — Phase 0–10 roadmap, end-to-end requirements traceability matrix, known limitations & verification disclosures, delivery checklist, and final master audit report.
+- `START_HERE.md` — Mandatory 19-step onboarding and execution protocol for engineering agents (deal-scanner scope).
+- `README.md` — Executive architecture overview and package guide (this file).
+- `TIRPSCANNER_PIVOT.md` — Pivot decision record, assumed domains, live-vs-retired scope map, frozen-doc policy, doc-change log.
+- `COMMERCIALIZATION.md` — Implementation ledger; 2026-11-18 CloudScanr cut preserved as history, 2026-11-26 pivot addendum is forward record.
+- `DEPLOY.md` — Deployment guide for `tirpscanr.com` / `api.tirpscanr.com` (toolchain unchanged).
+- `MANIFEST.json` — Machine-readable inventory of all files, sizes, categories, and SHA-256 digests. **FROZEN — never edit.**
+- `FILE_CHECKSUMS.sha256` — Standard `sha256sum -c` compatible integrity file. **FROZEN — never edit.**
+- `00_MARKET_RESEARCH/` — Market due-diligence archive. Cloud-provider pricing/management API matrices are retired-scope history; affiliate-network research remains relevant.
+- `01_A_TO_Z_BLUEPRINT/` — 26 technical specifications (`A_ARCHITECTURE.md` through `Z_ZERO_TRUST.md`). Live where they cover catalog, deals, affiliate, auth, admin, and platform; retired where they cover BYOC/provisioning/server management.
+- `02_SYSTEM_ARCHITECTURE/` — Component topology, diagrams, data flows, deployment architecture, and threat model. Read with the pivot scope map; BYOC/provisioning paths are retired.
+- `03_DATABASE/` — Entity-Relationship Diagram (`ERD.md`), `TABLE_DICTIONARY.md`, `INDEX_DESIGN.md`, executable PostgreSQL 16 DDL migrations, and rollback reference. Catalog/deal/affiliate/admin tables are live; BYOC/server tables are retired history.
+- `04_API_SPECIFICATION/` — OpenAPI 3.1 specification (`openapi.yaml`) with per-path implemented/planned status. Catalog/deal/affiliate/admin groups are live; `/cloud/*` server groups are retired.
+- `05_UXUI/` — Wireframes, interaction specs, component states, design system tokens, and screen inventory. Deal-scanner storefront, search, rankings, disclosure, and admin screens are live; cloud console/provisioning screens are retired.
+- `06_PRICING_ENGINE/` — Normalization rules, multi-currency FX & tax policies, scenario calculator, and freshness state machine. Live as the deal/plan normalization engine (naming is historical).
+- `07_AFFILIATE_ENGINE/` — Click attribution, `SubID`/`ClickID` cryptographic signing, postback/CSV reconciliation, double-entry commission ledger, and anti-fraud compliance. **LIVE.**
+- `08_CLOUD_MANAGEMENT/` — BYOC architecture, provisioning state machine, and day-2 operations. **RETIRED scope — historical archive only.**
+- `09_SECURITY/` — IAM model, secret lifecycle, tenant isolation, financial controls, and security test suites. Live as platform security; BYOC-credential sections are retired history.
+- `10_ADMIN_OPERATIONS/` — Admin console workflows, catalog discrepancy resolution, affiliate payout reconciliation. Live; cloud-operation auditing sections are retired history.
+- `11_WORK_ORDERS_0001_TO_1000/` — Master index, dependency DAG, and 1,000 individual Work Orders. **FROZEN — never edit.**
+- `12_AGENT_EXECUTION/` — Multi-agent orchestration directive, role matrix, file ownership locks, handoff protocol, and audit reporting templates.
+- `13_TESTING/` — Master test matrix, acceptance criteria, E2E specs, and independent audit procedures. Search/affiliate/security suites are live; provisioning suites are retired history.
+- `14_DEVOPS/` — CI/CD pipelines, monitoring, backup/recovery, cost management, and production runbooks. Live as platform operations.
+- `15_FINAL_DELIVERY/` — Phase roadmap, requirements traceability matrix, limitations & disclosures, delivery checklist, and final audit report. `REQUIREMENTS_TRACEABILITY.csv` is **FROZEN — never edit**; dated addenda carry forward status.

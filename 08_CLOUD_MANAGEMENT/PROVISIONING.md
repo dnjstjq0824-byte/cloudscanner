@@ -1,3 +1,5 @@
+> **RETIRED SCOPE — TirpScanner pivot (2026-11-26):** BYOC account connection, server provisioning, and cloud server management were removed from live scope. This file is CloudScanr-era history, preserved as record; do not build from it. Live scope (SaaS/AI-tool catalog, deal scan / price-drop detection, affiliate monetization) is defined in `TIRPSCANNER_PIVOT.md` at the repository root.
+
 # PROVISIONING.md — Idempotent Server Provisioning & Timeout Reconciliation Engine (Article 13 & 21)
 **Document ID:** `CS-CM-003`
 ## 1. 20-Step Server Provisioning Workflow (Matching Article 21 `WO-CS-0601`)

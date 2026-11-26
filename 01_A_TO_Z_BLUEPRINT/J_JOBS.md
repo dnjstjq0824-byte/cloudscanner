@@ -1,45 +1,54 @@
-# J — Jobs — Distributed Task Queue, Price Sync Schedulers, Retries, DLQ & Idempotency
+# J — Jobs — Distributed Task Queue, Deal-Sync Schedulers, Retries, DLQ & Idempotency
 
-**Document ID:** `CS-AZ-J`  
-**Version:** `1.0.0`  
-**Platform:** CloudScanr (`cloudscanr.com` — Independent Global Cloud Comparison, Affiliate & BYOC Management Platform)  
+**Document ID:** `CS-AZ-J` (stable ID, unchanged since CloudScanr era)  
+**Version:** `2.0.0` (TirpScanner pivot reframe, 2026-11-26)  
+**Platform:** TirpScanner (`tirpscanr.com` — Global SaaS/AI-Tool & Software Affiliate Deal Scanner)  
+**Pivot Note (2026-11-26):** `cloud:provision` and BYOC lifecycle polling retired. Live queues: deal sync, FX, reconciliation, alerts. See `TIRPSCANNER_PIVOT.md`.  
 **Responsible Work Orders:** `WO-CS-0801 ~ WO-CS-0825`
 
 ---
 
 ## 1. 기능 목적 (Functional Purpose)
-Architect a high-reliability background job processing engine that orchestrates scheduled price synchronization, FX updates, affiliate conversion reconciliation, price-drop alert delivery, and asynchronous BYOC server provisioning/lifecycle polling with strict idempotency and dead-letter queue (DLQ) recovery.
+
+Architect a high-reliability background job processing engine that orchestrates scheduled deal-feed synchronization, FX updates, affiliate conversion reconciliation, price-drop alert delivery, and content publishing with strict idempotency and dead-letter queue (DLQ) recovery.
 
 ---
 
-## 2. 사용자 역할 (User Roles & Actors)
-Backend Agent, Cloud Management Agent, SRE.
+## 2. User Roles & Actors
+
+Backend Agent, Deal-Feed Agent, SRE.
 
 ---
 
-## 3. 핵심 사용자 시나리오 (User Scenarios)
-1. User submits a DigitalOcean Droplet creation request; the HTTP handler validates permissions, records an idempotent job in `background_jobs` and `resource_operations`, enqueues a high-priority `cloud:provision` task, and returns `202 Accepted` with an operation ID.
-2. The worker polls DigitalOcean `GET /v2/droplets/{id}` every 5s until status transitions from `new` to `active`, then emits a real-time SSE/WebSocket event to the user dashboard.
-3. A price sync job encounters a transient network reset; Asynq retries with exponential backoff up to 5 times, and if still failing, moves the task to the DLQ and creates an Admin alert.
+## 3. User Scenarios
+
+1. User subscribes to a price-drop alert; the HTTP handler validates permissions, records an idempotent subscription, and returns `202 Accepted` with an alert ID.
+2. The deal-scan worker detects a 35 price drop on a tracked plan, enqueues a high-priority `alerts:price_drop` task, and the notification worker delivers email/webhook alerts with dedupe by `(alert_id, snapshot_id)`.
+3. A deal-sync job encounters a transient network reset; Asynq retries with exponential backoff up to 3 times, and if still failing, moves the task to the DLQ and creates an Admin alert.
 
 ---
 
-## 4. 기술 스택 (Technology Stack)
+## 4. Technology Stack
+
 Go `hibiken/asynq` (Redis-backed distributed queue) + PostgreSQL durable job state table (`background_jobs`) + Transactional Outbox relay (`outbox_events`).
 
 ---
 
-## 5. 데이터베이스 구조 (Database Schema & Tables)
+## 3. Database Schema & Tables
+
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `background_jobs`, `outbox_events`, `price_sync_jobs`, `resource_operations`
 
+- `resource_operations` is RETIRED (BYOC-era table, name historical); live deal/alert pipelines use `background_jobs` + `price_sync_jobs`.
 - Enforces strict referential integrity (`FOREIGN KEY`), `UUID` / `ULID` identifiers, `NUMERIC(18,8)` monetary precision, and `TIMESTAMPTZ` UTC timestamps.
 - Multi-tenant tables enforce PostgreSQL Row-Level Security (`RLS`) keyed on `organization_id`.
 
 ---
 
 ## 6. API 구조 (API Contracts & Endpoints)
+
 **Primary OpenAPI 3.1 Endpoints (`04_API_SPECIFICATION/openapi.yaml`):**
+
 - `GET /api/v1/admin/jobs`
 - `POST /api/v1/admin/jobs/{job_id}/retry`
 - `DELETE /api/v1/admin/jobs/{job_id}/cancel`
@@ -48,49 +57,58 @@ Go `hibiken/asynq` (Redis-backed distributed queue) + PostgreSQL durable job sta
 
 ---
 
-## 7. UI/UX 설계 (User Interface & Experience)
-User Operation Progress Drawer (real-time step progress for server creation/resizing) and Admin Job Queue Inspector (`/admin/jobs`) showing queue depths (`critical`, `cloud_ops`, `pricing_sync`, `notifications`, `dlq`).
+## 7. User Interface & Experience
+
+User Alert Delivery Status (alert history with sent/opened state) and Admin Job Queue Inspector (`/admin/jobs`) showing queue depths (`critical`, `deal_sync`, `reconciliation`, `notifications`, `dlq`).
 
 ---
 
-## 8. 상세 처리 로직 (Core Processing Logic)
-1. Priority Queues: `critical` (weight 6: token revocations, security alerts), `cloud_ops` (weight 4: BYOC provisioning, power actions, reconciliation), `pricing_sync` (weight 2: catalog/FX updates), `default` (weight 1: email/webhook alerts).
-2. Strict Idempotency Guard: Every job carries a deterministic `idempotency_key`. Before calling any external API, the worker acquires a PostgreSQL advisory lock or checks `resource_operations.status` to guarantee a task is never executed twice.
+## 8. Core Processing Logic
+
+1. Priority Queues: `critical` (weight 6: credential revocations, security alerts), `deal_sync` (weight 4: catalog/deal/FX updates), `reconciliation` (weight 2: affiliate conversion matching), `default` (weight 1: email/webhook alerts).
+2. Strict Idempotency Guard: Every job carries a deterministic `idempotency_key`. Before calling any external API, the worker acquires a PostgreSQL advisory lock or checks durable job state to guarantee a task is never executed twice.
 
 ---
 
-## 9. 보안 통제 (Security & Access Control)
+## 9. Security & Access Control
+
 Job payloads in Redis never contain plaintext API tokens; workers fetch and decrypt KMS-wrapped credentials from PostgreSQL only in memory during execution and zero the byte slice (`crypto/subtle` / explicit wipe) immediately after.
 
 ---
 
-## 10. 실패 및 예외 처리 (Failure Modes & Resilience)
-Special rule for `cloud:provision` timeout: NEVER auto-retry a timed-out `POST /servers` call blindly. Always execute `ReconcileBeforeRetry` (query provider list/tags by `cloudscanr_op_id`) first to check whether the server was actually created before the connection dropped.
+## 10. Failure Modes & Resilience
+
+Special rule for alert fan-out: NEVER send duplicate alerts on worker retry. Always check `(alert_id, snapshot_id)` dedupe state before dispatching, so a retried job delivers exactly once.
 
 ---
 
-## 11. 작업 간 의존성 (Inter-Module Dependencies)
-Depends on PostgreSQL (`P_POSTGRESQL.md`) and Redis; powers Data Acquisition (`D`) and Multi-cloud Management (`M`).
+## 11. Inter-Module Dependencies
+
+Depends on PostgreSQL (`P_POSTGRESQL.md`) and Redis; powers Data Acquisition (`D`) and Deal/Estimation Engine (`E`). Multi-cloud Management (`M`) is RETIRED.
 
 ---
 
-## 12. 테스트 전략 (Testing & Verification Strategy)
-Idempotency race-condition tests (50 concurrent workers attempting the same `idempotency_key`), timeout-reconciliation simulation tests, and DLQ replay tests.
+## 12. Testing & Verification Strategy
+
+Idempotency race-condition tests (30 concurrent workers attempting the same `idempotency_key`), alert-dedupe simulation tests, and DLQ replay tests.
 
 ---
 
-## 13. 완료 승인 기준 (Acceptance Criteria)
-- [x] Zero duplicate server creation when network timeouts occur after provider receives `POST` request.
+## 13. Acceptance Criteria
+
+- [x] Zero duplicate alert deliveries when network timeouts or worker retries occur.
 - [x] Zero plaintext credentials stored in Redis job payloads.
 - [x] Full visibility and manual retry/cancel controls in Admin Console.
 
 ---
 
-## 14. 검증 증빙 (Required Verification Evidence)
+## 14. Required Verification Evidence
+
 Asynq worker test logs, concurrent idempotency test output, and PostgreSQL `background_jobs` state transition traces.
 
 ---
 
-## 15. 실제 구현 담당 Work Order (Assigned Work Orders)
+## 15. Assigned Work Orders
+
 - **Work Order Range:** `WO-CS-0801 ~ WO-CS-0825`
 - **Cross-Reference Index:** `11_WORK_ORDERS_0001_TO_1000/WORK_ORDER_INDEX.csv`

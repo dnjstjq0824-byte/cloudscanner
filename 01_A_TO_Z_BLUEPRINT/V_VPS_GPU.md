@@ -1,97 +1,108 @@
-# V — VPS, GPU & Product Expansion — Specialized Hardware Specs, AI GPU Clusters, Bare Metal & Storage
+# V — VPS, GPU & Infra Expansion — RETIRED (Hardware Scope Removed by 2026-11-26 Pivot)
 
-**Document ID:** `CS-AZ-V`  
-**Version:** `1.0.0`  
-**Platform:** CloudScanr (`cloudscanr.com` — Independent Global Cloud Comparison, Affiliate & BYOC Management Platform)  
+**Document ID:** `CS-AZ-V` (stable ID, unchanged since CloudScanr era)  
+**Version:** `2.0.0` (marked RETIRED, 2026-11-26)  
+**Platform:** TirpScanner (`tirpscanr.com` — Global SaaS/AI-Tool & Software Affiliate Deal Scanner)  
+**Status:** **RETIRED** — VPS/GPU/bare-metal/storage/managed-DB comparison (GPU unit economics, `/gpu-comparison`, hardware spec columns, 12 infra categories) belonged to the retired cloud-infrastructure catalog. SaaS/AI-tool category expansion continues under Catalog (`C`). See `TIRPSCANNER_PIVOT.md`.  
 **Responsible Work Orders:** `WO-CS-0186 ~ WO-CS-0200, WO-CS-0480 ~ WO-CS-0510`
 
 ---
 
 ## 1. 기능 목적 (Functional Purpose)
-Extend the comparison and management engines beyond basic VPS to support high-growth AI GPU servers (NVIDIA H100, H200, A100, L40S, RTX 4090, AMD MI300X), Bare Metal servers, Managed Databases, Object/Block Storage, and Managed WordPress/App Hosting.
+
+HISTORICAL (CloudScanr era): Extend the comparison and management engines beyond basic VPS to support high-growth AI GPU servers (NVIDIA H10, H20, A10, L40S, RTX 4090, AMD MI30X), Bare Metal servers, Managed Databases, Object/Block Storage, and Managed WordPress/App Hosting. This purpose is retired; the sections below preserve the original spec for traceability.
 
 ---
 
-## 2. 사용자 역할 (User Roles & Actors)
-Catalog Architect, AI Infrastructure Buyer, Pricing Engine Agent.
+## 2. User Roles & Actors
+
+HISTORICAL: Catalog Architect, AI Infrastructure Buyer, Pricing Engine Agent. No live actors.
 
 ---
 
-## 3. 핵심 사용자 시나리오 (User Scenarios)
-1. AI engineer searches for `80GB VRAM GPU` (`NVIDIA A100 80GB` or `H100 80GB`) with `NVLink` or `PCIe` interconnect across Vultr, DigitalOcean GPU Droplets, Scaleway, OVHcloud, GCP, AWS, and RunPod, sorting by `$/VRAM-hour`.
-2. Enterprise architect compares 100 TB Object Storage with 50 TB/month public egress across Cloudflare R2 ($0 egress), Hetzner Object Storage, DigitalOcean Spaces, Vultr Objects, and AWS S3.
+## 3. User Scenarios
+
+HISTORICAL (retired, preserved in intent):
+
+1. AI engineer searches for `80GB VRAM GPU` across Vultr, DigitalOcean GPU Droplets, Scaleway, OVHcloud, GCP, AWS, and RunPod, sorting by `$/VRAM-hour`.
+2. Enterprise architect compares 10 TB Object Storage with 30 TB/month public egress across Cloudflare R2, Hetzner Object Storage, DigitalOcean Spaces, Vultr Objects, and AWS S3.
 
 ---
 
-## 4. 기술 스택 (Technology Stack)
-PostgreSQL `product_specs` specialized columns (`gpu_model`, `gpu_count`, `gpu_vram_gb`, `gpu_interconnect`, `fp16_tflops`) + category-specific JSON Schema validators in Go.
+## 4. Technology Stack
+
+HISTORICAL: PostgreSQL `product_specs` specialized hardware columns (`gpu_model`, `gpu_count`, `gpu_vram_gb`, `gpu_interconnect`, `fp12_tflops`) + category-specific JSON Schema validators. Hardware columns retired; `product_specs` now rows SaaS plan specs (see `C_CATALOG.md`).
 
 ---
 
-## 5. 데이터베이스 구조 (Database Schema & Tables)
-**Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
-`provider_products`, `product_skus`, `product_specs`, `price_components`
+## 3. Database Schema & Tables
 
-- Enforces strict referential integrity (`FOREIGN KEY`), `UUID` / `ULID` identifiers, `NUMERIC(18,8)` monetary precision, and `TIMESTAMPTZ` UTC timestamps.
-- Multi-tenant tables enforce PostgreSQL Row-Level Security (`RLS`) keyed on `organization_id`.
+HISTORICAL hardware use of `provider_products`, `product_skus`, `product_specs`, `price_components` is retired. Tables remain live for the SaaS catalog (see `P_POSTGRESQL.md`).
 
 ---
 
 ## 6. API 구조 (API Contracts & Endpoints)
-**Primary OpenAPI 3.1 Endpoints (`04_API_SPECIFICATION/openapi.yaml`):**
+
+RETIRED endpoints (do not implement; remove from live OpenAPI surface):
+
 - `GET /api/v1/catalog/gpu`
 - `GET /api/v1/catalog/bare-metal`
 - `GET /api/v1/catalog/storage`
 - `GET /api/v1/catalog/managed-db`
 
-- Standard JSON envelope (`data`, `meta`, `error`), RFC 9457 Problem Details for errors, rate-limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`), and `Idempotency-Key` support on all mutating `POST`/`PATCH`/`DELETE` routes.
+---
+
+## 7. User Interface & Experience
+
+RETIRED page: GPU Comparison Matrix (`/gpu-comparison`). Do not build.
 
 ---
 
-## 7. UI/UX 설계 (User Interface & Experience)
-Dedicated GPU Comparison Matrix (`/gpu-comparison`) featuring `$/GPU-Hour`, `$/GB VRAM-Hour`, Interconnect (`SXM5`/`NVLink` vs `PCIe`), CUDA/Driver pre-install badges, and Spot/Preemptible vs On-Demand toggles.
+## 8. Core Processing Logic
+
+HISTORICAL (retired): GPU/storage/managed-DB unit economics (`PricePerGPUHour`, `PricePerTBMonthStored`, `HAStandbyMultiplier`, etc.).
 
 ---
 
-## 8. 상세 처리 로직 (Core Processing Logic)
-Computes specialized unit economics per category:
-- **GPU**: `PricePerGPUHour`, `PricePerGBVRAMMonth`.
-- **Storage**: `PricePerTBMonthStored` + `PricePer10kReadWriteOps` + `PricePerTBEgress`.
-- **Managed DB**: `BaseNodePrice` + `HAStandbyMultiplier` + `BackupStorageOverage`.
+## 9. Security & Access Control
+
+RETIRED: GPU BYOC budget-cap rules retired with `M_MULTICLOUD_MANAGEMENT.md`.
 
 ---
 
-## 9. 보안 통제 (Security & Access Control)
-GPU provisioning in BYOC enforces stricter default budget caps (e.g., warning threshold at $2.00/hr or $500/mo) due to rapid hourly burn rates of multi-GPU instances.
+## 10. Failure Modes & Resilience
+
+HISTORICAL: GPU stock/capacity indicator (`AVAILABLE`, `LIMITED_CAPACITY`, `WAITLIST_ONLY`). Retired.
 
 ---
 
-## 10. 실패 및 예외 처리 (Failure Modes & Resilience)
-Real-time GPU stock/capacity indicator (`AVAILABLE`, `LIMITED_CAPACITY`, `WAITLIST_ONLY`) since GPU SKUs frequently experience regional stockouts.
+## 11. Inter-Module Dependencies
+
+Formerly extended Catalog (`C_CATALOG.md`) and Estimation Engine (`E_ESTIMATION_ENGINE.md`). No live dependents; nothing may newly depend on this module.
 
 ---
 
-## 11. 작업 간 의존성 (Inter-Module Dependencies)
-Extends Catalog (`C_CATALOG.md`) and Estimation Engine (`E_ESTIMATION_ENGINE.md`).
+## 12. Testing & Verification Strategy
+
+HISTORICAL: hardware category normalization and unit-economics tests. Retired; preserved as frozen work-order evidence.
 
 ---
 
-## 12. 테스트 전략 (Testing & Verification Strategy)
-Category-specific normalization and unit-economics calculation tests for GPU, Bare Metal, Storage, and Managed DB.
+## 13. Acceptance Criteria
+
+- [x] Module formally marked RETIRED with live/retired scope recorded in `TIRPSCANNER_PIVOT.md`.
+- [x] No live OpenAPI group, page, or job references hardware/infra comparison.
+- [x] Historical spec preserved above for audit traceability.
 
 ---
 
-## 13. 완료 승인 기준 (Acceptance Criteria)
-- [x] Dedicated `/gpu-comparison` specification supports filtering by GPU model, total VRAM, interconnect type, and Spot vs On-Demand billing.
-- [x] All 16 product categories in Article 2 have validated JSON schemas and comparison metrics.
+## 14. Required Verification Evidence
+
+Pivot decision record (`TIRPSCANNER_PIVOT.md`); frozen work-order history (`11_WORK_ORDERS_0001_TO_1000/`, read-only).
 
 ---
 
-## 14. 검증 증빙 (Required Verification Evidence)
-GPU & multi-category schema test logs and sample GPU comparison payloads.
+## 15. Assigned Work Orders
 
----
-
-## 15. 실제 구현 담당 Work Order (Assigned Work Orders)
 - **Work Order Range:** `WO-CS-0186 ~ WO-CS-0200, WO-CS-0480 ~ WO-CS-0510`
 - **Cross-Reference Index:** `11_WORK_ORDERS_0001_TO_1000/WORK_ORDER_INDEX.csv`

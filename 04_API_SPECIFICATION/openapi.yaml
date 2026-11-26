@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
-  title: CloudScanr Global Cloud Price Comparison, Affiliate & BYOC Management API
+  title: TirpScanner Global SaaS/AI-Tool Deal Scanner & Affiliate API
   version: 1.0.0
-  summary: Standalone REST API for CloudScanr (cloudscanr.com) — Zero TreeScan Dependency
+  summary: Standalone REST API for TirpScanner (tirpscanr.com, registered; wiring pending) — SaaS/AI-tool deals & affiliate
   description: |
-    Complete OpenAPI 3.1 contract covering all 22 API groups mandated by Article 19:
+   Complete OpenAPI 3.1 contract covering all 22 API groups mandated by Article 19:
     1. Authentication API, 2. Users API, 3. Organizations API, 4. Providers API,
     5. Cloud Catalog API, 6. Pricing API, 7. Comparison API, 8. Search API,
     9. Promotions API, 10. Affiliate API, 11. Tracking API, 12. Cloud Connection API,
@@ -27,13 +27,18 @@ info:
     server power/resize actions, pricing quarantine, affiliate CSV reconcile
     endpoint. Tokens are v1 HMAC-SHA256 (not PASETO); the HTTP router is
     net/http ServeMux.
+    PIVOT 2026-11-26 — TirpScanner: the /api/v1/cloud/* surface (groups 12–16:
+    connections, provisioning, server management, budgets, costs) is RETIRED and
+    every operation below carries deprecated:true. Live surface is
+    affiliate/catalog/deal/search/content/admin. Domains tirpscanr.com,
+    api.tirpscanr.com, www.tirpscanr.com are ASSUMED.
   contact:
-    name: CloudScanr Lead System Architecture Team
-    url: https://cloudscanr.com
+    name: TirpScanner Lead System Architecture Team
+    url: https://tirpscanr.com
 servers:
-  - url: https://api.cloudscanr.com
+  - url: https://api.tirpscanr.com
     description: Production Edge API
-  - url: https://staging-api.cloudscanr.com
+  - url: https://staging-api.tirpscanr.com
     description: Staging Verification API
   - url: http://localhost:8080
     description: Local Developer & Agent Simulator
@@ -45,41 +50,41 @@ tags:
   - name: 03_Organizations
     description: Multi-Tenant Organizations, Team Invitations & RBAC Permissions
   - name: 04_Providers
-    description: Cloud Providers Directory, Capabilities & Regions
-  - name: 05_Cloud_Catalog
-    description: 16-Category Cloud Product Catalog, SKUs & Hardware Specifications
+    description: SaaS Vendors & AI Tools Directory, Plans & Regions
+  - name: 03_Cloud_Catalog
+    description: SaaS/AI-Tool Catalog, Subscription Plans & Deal Snapshots
   - name: 06_Pricing
-    description: 36-Dimension TCO Estimation, FX Rates, Tax Policies & Historical Snapshots
+    description: Plan-Price Normalization, Deal Estimates, FX Rates, Tax Policies & Historical Snapshots
   - name: 07_Comparison
     description: Side-by-Side Multi-SKU Comparison Lists & Shareable Matrices
   - name: 08_Search
-    description: Sub-50ms OpenSearch Facets, Natural Language Spec Parser & Rankings
+    description: Sub-50ms OpenSearch Deal Facets, Natural Language Query Parser & Rankings
   - name: 09_Promotions
-    description: Free Trial Credits, Promotional Coupons & Validity Terms
+    description: SaaS Deals, Free Trials, Discount Coupons & Validity Terms
   - name: 10_Affiliate
     description: Public Affiliate Programs, Campaigns & Compliant Link Metadata
   - name: 11_Tracking
     description: /go/{slug} Outbound Redirect & Signed Network Conversion Postbacks
   - name: 12_Cloud_Connection
-    description: BYOC Account OAuth2 / Scoped Token Connection, KMS Encryption & Verification
+    description: "RETIRED 2026-11-26 — BYOC connection surface removed"
   - name: 13_Server_Provisioning
-    description: Cost Approval Gate & Idempotent Multi-Cloud Server Creation
+    description: "RETIRED 2026-11-26 — BYOC provisioning surface removed"
   - name: 14_Server_Management
-    description: Server Inventory, Power Control, Resize, Backups, Firewalls, SSH Keys & Safe Deletion
+    description: "RETIRED 2026-11-26 — BYOC server management surface removed"
   - name: 15_Budget
-    description: Organization & Connection Monthly Spend Caps & Hard Provisioning Blocks
+    description: "RETIRED 2026-11-26 — BYOC budget surface removed"
   - name: 16_Cloud_Cost
-    description: Real-time BYOC Run-Rate, Accrued Spend & Month-End Cost Forecast
+    description: "RETIRED 2026-11-26 — BYOC cost surface removed"
   - name: 17_Price_Alert
-    description: Automated SKU & Spec-Threshold Price Drop Subscriptions
+    description: Automated Plan & Deal Price-Drop Subscriptions
   - name: 18_Analytics
     description: Affiliate Yield (EPC/CVR), Search Demand Trends & Funnel Metrics
   - name: 19_Admin
     description: Provider Sync Quarantine, Affiliate Ledger Reconciliation & Security Freeze
   - name: 20_Content
-    description: Tutorials, Verified Benchmarks, Provider Reviews & Methodology
+    description: Tutorials, Deal Guides, Verified Vendor Reviews & Methodology
   - name: 21_Audit
-    description: Tamper-Evident Hash-Chained Security & Cloud Operation Audit Logs
+    description: Tamper-Evident Hash-Chained Security & Admin Operation Audit Logs
   - name: 22_Notifications
     description: User In-App Notifications, Email Alerts & SSRF-Safe Webhook Dispatch
 
@@ -88,13 +93,13 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: CloudScanr-HMAC-SHA256-v1
+      bearerFormat: TirpScanner-HMAC-SHA256-v1
       description: Short-lived (15m) HMAC-SHA256 access token (identity/token.go) with user_id, org_id, role, and expiry claims.
     StepUpMFAAuth:
       type: apiKey
       in: header
       name: X-Step-Up-MFA-Token
-      description: Required for write-token connection, server provisioning approval, and server deletion.
+      description: Required for sensitive admin approvals and destructive admin actions. (BYOC provisioning use retired 2026-11-26.)
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -102,7 +107,7 @@ components:
       required: true
       schema:
         type: string
-        minLength: 16
+        minLength: 12
         maxLength: 64
       description: Unique client key preventing duplicate execution and double billing. Replays return the stored outcome with X-Cache-Lookup HIT-IDEMPOTENCY.
     OrgIdHeader:
@@ -181,6 +186,8 @@ components:
         country_code_for_tax: { type: string, default: KR }
         include_tax: { type: boolean, default: false }
     CostApprovalRequest:
+      deprecated: true
+      description: "RETIRED 2026-11-26 — BYOC approval schema."
       type: object
       required: [connection_id, operation_type, sku_id, region_code, acknowledged_monthly_cost_usd]
       properties:
@@ -193,6 +200,8 @@ components:
         acknowledged_monthly_cost_usd: { type: string }
         destructive_confirmation_hostname: { type: ["string", "null"] }
     CreateServerRequest:
+      deprecated: true
+      description: "RETIRED 2026-11-26 — BYOC provisioning schema."
       type: object
       required: [connection_id, approval_id, sku_id, region_code, image_slug, hostname]
       properties:
@@ -214,7 +223,7 @@ paths:
   /api/v1/auth/register:
     post:
       tags: [01_Authentication]
-      summary: Register a new standalone CloudScanr user account
+      summary: Register a new standalone TirpScanner user account
       operationId: registerUser
       requestBody:
         required: true
@@ -279,10 +288,10 @@ paths:
     delete:
       tags: [02_Users]
       security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
-      summary: Initiate account deletion and disconnect BYOC tokens
+      summary: Initiate account deletion and purge personal data
       operationId: deleteCurrentUser
       responses:
-        "202": { description: Account scheduled for deletion and tokens wiped }
+        "202": { description: Account scheduled for deletion and data purge }
   /api/v1/users/me/export:
     post:
       tags: [02_Users]
@@ -338,14 +347,14 @@ paths:
   /api/v1/providers:
     get:
       tags: [04_Providers]
-      summary: List all cloud providers with verification statuses and capability summaries
+      summary: List all SaaS vendors and AI tools with verification statuses
       operationId: listProviders
       responses:
         "200": { description: Providers list }
   /api/v1/providers/{slug}:
     get:
       tags: [04_Providers]
-      summary: Get detailed provider profile, regions, API capabilities, and reviews
+      summary: Get detailed vendor profile, tools, plans, deals, and reviews
       operationId: getProviderBySlug
       parameters:
         - name: slug
@@ -355,25 +364,25 @@ paths:
       responses:
         "200": { description: Provider detail }
 
-  # 5. Cloud Catalog API
+  # 3. Cloud Catalog API
   /api/v1/catalog/categories:
     get:
-      tags: [05_Cloud_Catalog]
-      summary: List all 16 infrastructure categories and SKU counts
+      tags: [03_Cloud_Catalog]
+      summary: List all SaaS/AI-tool categories and plan counts
       operationId: listCatalogCategories
       responses:
         "200": { description: Category taxonomy }
   /api/v1/catalog/skus:
     get:
-      tags: [05_Cloud_Catalog]
-      summary: List normalized cloud SKUs with specs and latest price snapshots
+      tags: [03_Cloud_Catalog]
+      summary: List normalized SaaS plans with specs and latest price snapshots
       operationId: listCatalogSKUs
       responses:
         "200": { description: Paginated SKU list }
   /api/v1/catalog/skus/{sku_id}:
     get:
-      tags: [05_Cloud_Catalog]
-      summary: Get full 36-field SKU specification, historical price chart, and official source link
+      tags: [03_Cloud_Catalog]
+      summary: Get full normalized plan specification, historical price chart, and official source link
       operationId: getSKUDetail
       parameters:
         - name: sku_id
@@ -387,7 +396,7 @@ paths:
   /api/v1/pricing/estimate:
     post:
       tags: [06_Pricing]
-      summary: Calculate itemized TCO (implemented; canonical path, identical to /api/v1/estimate/tco alias)
+      summary: Calculate itemized subscription estimate (implemented; canonical path, identical to /api/v1/estimate/tco alias)
       operationId: calculateTCOEstimate
       requestBody:
         required: true
@@ -400,7 +409,7 @@ paths:
   /api/v1/estimate/tco:
     post:
       tags: [06_Pricing]
-      summary: Alias of POST /api/v1/pricing/estimate (implemented; kept for backward compatibility)
+      summary: Alias of POST /api/v1/pricing/estimate (implemented; kept for backward compatibility; TCO naming is legacy)
       operationId: calculateTCOEstimateAlias
       requestBody:
         required: true
@@ -422,14 +431,14 @@ paths:
   /api/v1/comparisons:
     post:
       tags: [07_Comparison]
-      summary: Create or save a side-by-side multi-SKU comparison matrix
+      summary: Create or save a side-by-side multi-plan comparison matrix
       operationId: createComparisonList
       responses:
         "201": { description: Comparison matrix created with share_slug }
   /api/v1/comparisons/{share_slug}:
     get:
       tags: [07_Comparison]
-      summary: Retrieve a saved comparison matrix with live normalized TCO
+      summary: Retrieve a saved comparison matrix with live normalized plan prices
       operationId: getComparisonBySlug
       parameters:
         - name: share_slug
@@ -443,13 +452,13 @@ paths:
   /api/v1/search/skus:
     get:
       tags: [08_Search]
-      summary: Execute faceted OpenSearch query + natural language spec parsing
+      summary: Execute faceted OpenSearch deal query + natural language parsing
       operationId: searchSKUs
       parameters:
         - name: q
           in: query
           schema: { type: string }
-          description: "Natural language spec query (e.g. '4 vcpu 16gb nvme frankfurt under $40')"
+          description: "Natural language deal query (e.g. 'ai video editor under $20 with annual discount')"
         - name: category
           in: query
           schema: { type: string }
@@ -470,7 +479,7 @@ paths:
   /api/v1/rankings/best-value:
     get:
       tags: [08_Search]
-      summary: Get unbiased Best-Value leaderboard per workload preset
+      summary: Get unbiased Best-Value leaderboard per use-case preset
       operationId: getBestValueRankings
       responses:
         "200": { description: Ranked SKUs with transparent score components }
@@ -479,7 +488,7 @@ paths:
   /api/v1/promotions:
     get:
       tags: [09_Promotions]
-      summary: List verified cloud free-trial credits and promotional coupons
+      summary: List verified SaaS deals, free trials, and promotional coupons
       operationId: listPromotions
       responses:
         "200": { description: Active promotions list }
@@ -519,14 +528,15 @@ paths:
       responses:
         "200": { description: Conversion reconciled idempotently }
 
-  # 12. Cloud Connection API (BYOC)
+  # 12. Cloud Connection API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/connections:
     get:
       tags: [12_Cloud_Connection]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: List connected BYOC cloud accounts for the active organization
+      summary: "[RETIRED 2026-11-26] List connected BYOC cloud accounts"
       operationId: listCloudConnections
+      deprecated: true
       responses:
         "200": { description: Tenant-isolated connections list }
     post:
@@ -535,8 +545,9 @@ paths:
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
-      summary: Connect a user-owned cloud account (OAuth2 code or scoped API token encrypted via KMS)
+      summary: "[RETIRED 2026-11-26] Connect a user-owned cloud account"
       operationId: createCloudConnection
+      deprecated: true
       responses:
         "201": { description: Connection verified and encrypted with KMS DEK+AAD }
   /api/v1/cloud/connections/{connection_id}:
@@ -549,12 +560,13 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      summary: Disconnect BYOC account and cryptographically shred stored token ciphertext
+      summary: "[RETIRED 2026-11-26] Disconnect BYOC account"
       operationId: disconnectCloudAccount
+      deprecated: true
       responses:
         "204": { description: Account disconnected and credentials wiped }
 
-  # 13. Server Provisioning API
+  # 13. Server Provisioning API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/approvals:
     post:
       tags: [13_Server_Provisioning]
@@ -562,8 +574,9 @@ paths:
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
-      summary: Sign an explicit 5-minute Cost or Destructive Operation Approval token
+      summary: "[RETIRED 2026-11-26] Sign a Cost or Destructive Operation Approval token"
       operationId: createOperationApproval
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -581,8 +594,9 @@ paths:
         - name: connection_id
           in: query
           schema: { type: string }
-      summary: List managed servers for the organization (implemented)
+      summary: "[RETIRED 2026-11-26] List managed servers for the organization"
       operationId: listServers
+      deprecated: true
       responses:
         "200": { description: Unified multi-cloud server inventory }
     post:
@@ -591,8 +605,9 @@ paths:
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
-      summary: Provision a server with a signed approval (implemented, sync 201; body carries approval_id, hostname, specs; MFA attested on the approval)
+      summary: "[RETIRED 2026-11-26] Provision a server with a signed approval"
       operationId: provisionServer
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -604,14 +619,15 @@ paths:
         "400": { description: Blocked by budget policy, invalid approval, or safety gate }
         "403": { description: Missing cost approval or read-only token }
 
-  # 14. Server Management API
+  # 14. Server Management API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/servers/inventory:
     get:
       tags: [14_Server_Management]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: PLANNED — use implemented GET /api/v1/cloud/servers or /api/v1/cloud/resources instead
+      summary: "[RETIRED 2026-11-26] Server inventory (was PLANNED; BYOC removed)"
       operationId: listServersInventory
+      deprecated: true
       responses:
         "200": { description: Unified multi-cloud server inventory }
   /api/v1/cloud/servers/{server_id}:
@@ -624,8 +640,9 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      summary: Get server status, IPs, specs, metrics, backups, and operation history
+      summary: "[RETIRED 2026-11-26] Get server status and operation history"
       operationId: getServerDetail
+      deprecated: true
       responses:
         "200": { description: Server detail }
     delete:
@@ -638,8 +655,9 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      summary: Permanently delete a server (implemented; JSON body carries confirmation_hostname + mfa_verified double gate)
+      summary: "[RETIRED 2026-11-26] Permanently delete a server"
       operationId: deleteServer
+      deprecated: true
       responses:
         "200": { description: Server marked DELETED }
   /api/v1/cloud/servers/{server_id}/actions:
@@ -653,19 +671,21 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      summary: PLANNED — Day-2 actions (power_on, shutdown, reboot, resize, snapshot, backup) pending live management adapters
+      summary: "[RETIRED 2026-11-26] Day-2 server actions (was PLANNED; BYOC removed)"
       operationId: executeServerAction
+      deprecated: true
       responses:
         "202": { description: Action queued }
 
-  # 15. Budget API
+  # 15. Budget API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/budgets:
     get:
       tags: [15_Budget]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: Get the organization budget policy (implemented; 404 when none exists)
+      summary: "[RETIRED 2026-11-26] Get the organization budget policy"
       operationId: getBudgetPolicy
+      deprecated: true
       responses:
         "200": { description: Budget policy }
     put:
@@ -674,19 +694,21 @@ paths:
       parameters:
         - { $ref: "#/components/parameters/OrgIdHeader" }
         - { $ref: "#/components/parameters/IdempotencyKey" }
-      summary: Create or update the monthly spend cap and provisioning hard-block policy (implemented)
+      summary: "[RETIRED 2026-11-26] Create or update the monthly spend cap policy"
       operationId: saveBudgetPolicy
+      deprecated: true
       responses:
         "200": { description: Budget policy saved }
 
-  # 16. Cloud Cost API
+  # 16. Cloud Cost API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/costs/summary:
     get:
       tags: [16_Cloud_Cost]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: Get current hourly burn rate, month-to-date accrued spend, and month-end forecast
+      summary: "[RETIRED 2026-11-26] Get burn rate, accrued spend, and forecast"
       operationId: getCloudCostSummary
+      deprecated: true
       responses:
         "200": { description: Multi-cloud cost summary }
 
@@ -702,7 +724,7 @@ paths:
     post:
       tags: [17_Price_Alert]
       security: [{ BearerAuth: [] }]
-      summary: Create a price-drop alert on a specific SKU or spec filter
+      summary: Create a price-drop alert on a specific plan or deal filter
       operationId: createPriceAlert
       responses:
         "201": { description: Alert created }
@@ -877,7 +899,7 @@ paths:
   /api/v1/content/articles:
     get:
       tags: [20_Content]
-      summary: List published tutorials, benchmark reports, and comparison guides
+      summary: List published tutorials, deal guides, and comparison guides
       operationId: listArticles
       responses:
         "200": { description: Articles list }
@@ -885,7 +907,7 @@ paths:
     post:
       tags: [20_Content]
       security: [{ BearerAuth: [] }]
-      summary: Submit a verified provider review (flagged with BYOC customer verification badge)
+      summary: Submit a verified vendor review (flagged with verified-customer badge)
       operationId: createProviderReview
       responses:
         "201": { description: Review submitted for moderation }
@@ -896,7 +918,7 @@ paths:
       tags: [21_Audit]
       security: [{ BearerAuth: [] }]
       parameters: [{ $ref: "#/components/parameters/OrgIdHeader" }]
-      summary: Query tamper-evident hash-chained security and server operation audit logs
+      summary: Query tamper-evident hash-chained security and admin operation audit logs
       operationId: listAuditLogs
       responses:
         "200": { description: Audit log entries with hash chain verification }
@@ -906,7 +928,7 @@ paths:
     get:
       tags: [22_Notifications]
       security: [{ BearerAuth: [] }]
-      summary: List user notifications (price drops, server provisioning completion, budget warnings)
+      summary: List user notifications (price drops, new deals, expiring promotions)
       operationId: listNotifications
       responses:
         "200": { description: Notifications list }

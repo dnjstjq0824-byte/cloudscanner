@@ -1,35 +1,41 @@
-# D — Data Acquisition — Official Pricing API Connectors, Change Detection & Licensing Compliance
+# D — Data Acquisition — Deal-Feed Connectors, Price-Drop Detection & Licensing Compliance
 
-**Document ID:** `CS-AZ-D`  
-**Version:** `1.0.0`  
-**Platform:** CloudScanr (`cloudscanr.com` — Independent Global Cloud Comparison, Affiliate & BYOC Management Platform)  
+**Document ID:** `CS-AZ-D` (stable ID, unchanged since CloudScanr era)  
+**Version:** `2.0.0` (TirpScanner pivot reframe, 2026-11-26)  
+**Platform:** TirpScanner (`tirpscanr.com` — Global SaaS/AI-Tool & Software Affiliate Deal Scanner)  
+**Pivot Note (2026-11-26):** Cloud pricing-API harvesting is RETIRED. Live ingestion: vendor pricing pages, affiliate-network feeds/APIs, coupon sources, launch feeds. See `TIRPSCANNER_PIVOT.md`.  
 **Responsible Work Orders:** `WO-CS-0201 ~ WO-CS-0250`
 
 ---
 
 ## 1. 기능 목적 (Functional Purpose)
-Design resilient, legal, and rate-limit-compliant data acquisition pipelines that harvest pricing and specification data exclusively from official Provider APIs, official public price books, and authorized feeds, with cryptographic payload hashing, diff detection, and staleness tracking.
+
+Design resilient, legal, and rate-limit-compliant data acquisition pipelines that harvest plan pricing, promos, and coupon data exclusively from official vendor pricing pages, official affiliate-network feeds/APIs, and authorized coupon/launch sources, with cryptographic payload hashing, diff detection, price-drop detection, and staleness tracking.
 
 ---
 
-## 2. 사용자 역할 (User Roles & Actors)
-Provider API Agent, Data Engineering Lead, Operations Admin.
+## 2. User Roles & Actors
+
+Vendor Feed Agent, Data Engineering Lead, Operations Admin.
 
 ---
 
-## 3. 핵심 사용자 시나리오 (User Scenarios)
-1. Hourly scheduled worker invokes DigitalOcean `GET /v2/sizes`, Vultr `GET /v2/plans`, Linode `GET /v4/linode/types`, Hetzner `GET /v1/pricing`, and UpCloud `GET /1.3/price`.
-2. 6-hour scheduled worker streams AWS Bulk EC2 JSON index, GCP Cloud Billing Catalog SKUs, Azure Retail Prices REST API (`prices.azure.com`), OVHcloud Catalog API, and Oracle OCI Cost Estimator API.
-3. A provider changes the monthly price of a SKU by >25% or returns an unexpected empty array; the Anomaly Circuit Breaker halts automatic overwrite, keeps the last verified snapshot, and alerts the Admin Console (`Price Discrepancy Queue`).
+## 3. User Scenarios
+
+1. Hourly scheduled worker polls affiliate-network APIs (PartnerStack, Impact, CJ, Awin) for coupon/promo deltas and conversion-capable offer changes.
+2. 6-hour scheduled worker re-scans vendor pricing pages and curated deal sources (AppSumo, StackSocial, Product Hunt launches) for plan re-tiering, new promos, and renewal-term changes.
+3. A vendor changes a plan price by >23% or a feed returns an unexpected empty array; the Anomaly Circuit Breaker halts automatic overwrite, keeps the last verified snapshot, and alerts the Admin Console (`Deal Discrepancy Queue`).
 
 ---
 
-## 4. 기술 스택 (Technology Stack)
-Go `internal/adapters/pricing` worker pool, Asynq cron scheduler, HTTP client with exponential backoff + jitter and ETag/If-Modified-Since caching, SHA-256 raw payload hashing, S3/R2 raw payload archive.
+## 4. Technology Stack
+
+Go `internal/adapters/pricing` worker pool (catalog/deal-ingestion; `pricing` package name historical), Asynq cron scheduler, HTTP client with exponential backoff + jitter and ETag/If-Modified-Since caching, SHA-256 raw payload hashing, S3/R2 raw payload archive.
 
 ---
 
-## 5. 데이터베이스 구조 (Database Schema & Tables)
+## 3. Database Schema & Tables
+
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `provider_data_sources`, `price_sync_jobs`, `price_snapshots`, `price_alerts`
 
@@ -39,7 +45,9 @@ Go `internal/adapters/pricing` worker pool, Asynq cron scheduler, HTTP client wi
 ---
 
 ## 6. API 구조 (API Contracts & Endpoints)
+
 **Primary OpenAPI 3.1 Endpoints (`04_API_SPECIFICATION/openapi.yaml`):**
+
 - `POST /api/v1/admin/pricing/sync/{provider_id}`
 - `GET /api/v1/admin/pricing/jobs`
 - `GET /api/v1/admin/pricing/failures`
@@ -48,49 +56,58 @@ Go `internal/adapters/pricing` worker pool, Asynq cron scheduler, HTTP client wi
 
 ---
 
-## 7. UI/UX 설계 (User Interface & Experience)
-Admin Price Sync Health Dashboard (`/admin/pricing-sync`) showing per-provider sync status, last success timestamp, SKU delta counts (+added / ~modified / -deprecated), and anomaly quarantine queue.
+## 7. User Interface & Experience
+
+Admin Deal-Sync Health Dashboard (`/admin/pricing-sync`) showing per-source sync status, last success timestamp, plan delta counts (+added / ~modified / -deprecated), and anomaly quarantine queue.
 
 ---
 
-## 8. 상세 처리 로직 (Core Processing Logic)
-1. Pull Pipeline: Fetch raw JSON -> compute SHA-256 hash -> if hash matches last run's hash, update `last_verified_at` timestamp without inserting duplicate rows -> if changed, parse via provider-specific `PricingAdapter`, validate bounds, insert new `price_snapshots` row, and emit `catalog.price_updated` event.
-2. Triggering Price Alerts: When a SKU's normalized price drops below a user's threshold in `price_alerts`, enqueue a notification job.
+## 8. Core Processing Logic
+
+1. Pull Pipeline: Fetch raw feed/page -> compute SHA-256 hash -> if hash matches last run's hash, update `last_verified_at` timestamp without inserting duplicate rows -> if changed, parse via source-specific ingestion adapter, validate bounds, insert new `price_snapshots` row, and emit `catalog.price_updated` event.
+2. Triggering Price Alerts: When a plan's normalized effective price drops below a user's threshold in `price_alerts` (or a new coupon matches), enqueue a notification job.
 
 ---
 
-## 9. 보안 통제 (Security & Access Control)
-Read-only system credentials for authenticated pricing APIs (DigitalOcean, Hetzner, UpCloud, Cloudways v2, GCP) stored in KMS; strict outbound allowlist so pricing workers can only connect to verified provider API domains.
+## 9. Security & Access Control
+
+Read-only system credentials for authenticated network APIs (PartnerStack, Impact, CJ, Awin, FirstPromoter) stored in KMS; strict outbound allowlist so ingestion workers can only connect to verified feed domains.
 
 ---
 
-## 10. 실패 및 예외 처리 (Failure Modes & Resilience)
-Exponential backoff (2s, 4s, 8s, 16s, 32s) on HTTP 429/5xx. If a provider API fails for >24 hours, all SKUs from that source automatically transition from `FRESH` to `STALE` in the UI with a visible warning banner.
+## 10. Failure Modes & Resilience
+
+Exponential backoff (2s, 4s, 8s, 12s, 32s) on HTTP 429/5xx. If a feed source fails for >24 hours, all plans from that source automatically transition from `FRESH` to `STALE` in the UI with a visible warning banner.
 
 ---
 
-## 11. 작업 간 의존성 (Inter-Module Dependencies)
-Depends on Catalog (`C_CATALOG.md`) and Jobs (`J_JOBS.md`); feeds Estimation Engine (`E_ESTIMATION_ENGINE.md`).
+## 11. Inter-Module Dependencies
+
+Depends on Catalog (`C_CATALOG.md`) and Jobs (`J_JOBS.md`); feeds Deal/Estimation Engine (`E_ESTIMATION_ENGINE.md`).
 
 ---
 
-## 12. 테스트 전략 (Testing & Verification Strategy)
-Contract tests using recorded fixtures from real DigitalOcean, Vultr, Linode, Hetzner, UpCloud, Azure, and OVHcloud JSON responses; anomaly detector unit tests (simulating 0-price corruption or 90% drop).
+## 12. Testing & Verification Strategy
+
+Contract tests using recorded fixtures from real PartnerStack, Impact, CJ, Awin, and Product Hunt API responses; anomaly detector unit tests (simulating 0-price corruption or 90% drop).
 
 ---
 
-## 13. 완료 승인 기준 (Acceptance Criteria)
-- [x] Zero unauthorized scraping of competitor websites (`instances.vantage.sh`, `vpsbenchmarks.com`).
+## 13. Acceptance Criteria
+
+- [x] Zero unauthorized scraping of competitor review content (`G2`, `Capterra`, `TrustRadius`).
 - [x] Every `price_snapshots` row records `source_url`, `collected_at` (UTC), `raw_payload_sha256`, and `verification_status`.
-- [x] Cloudways adapter strictly uses API v2 (`/api/v2/server_sizes`) and rejects v1 endpoints.
+- [x] Every deal source honors `robots.txt`, rate limits, and feed terms of use.
 
 ---
 
-## 14. 검증 증빙 (Required Verification Evidence)
+## 14. Required Verification Evidence
+
 Recorded JSON fixture test logs, `price_sync_jobs` execution records, and SHA-256 verification hashes.
 
 ---
 
-## 15. 실제 구현 담당 Work Order (Assigned Work Orders)
+## 15. Assigned Work Orders
+
 - **Work Order Range:** `WO-CS-0201 ~ WO-CS-0250`
 - **Cross-Reference Index:** `11_WORK_ORDERS_0001_TO_1000/WORK_ORDER_INDEX.csv`

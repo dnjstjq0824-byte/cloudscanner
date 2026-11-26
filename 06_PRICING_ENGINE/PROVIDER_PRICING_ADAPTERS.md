@@ -1,15 +1,10 @@
-# PROVIDER_PRICING_ADAPTERS.md — Per-Provider Pricing Ingestion Specifications
+# PROVIDER_PRICING_ADAPTERS.md — SaaS/AI-Tool Deal-Ingestion Adapter Specification
 **Document ID:** `CS-PE-005`
-## 1. Tier-1 & Tier-2 Adapter Endpoint & Mapping Rules
-1. **DigitalOcean (`digitalocean`)**: `GET https://api.digitalocean.com/v2/sizes` -> maps `slug`, `memory`, `vcpus`, `disk`, `transfer`, `price_monthly`, `price_hourly`, `regions[]`.
-2. **UpCloud (`upcloud`)**: `GET https://api.upcloud.com/1.3/plan` + `GET /1.3/price` -> maps zone-specific hourly pricing and zero-cost egress transfer policy.
-3. **Cloudways (`cloudways`)**: Strictly **API v2** `GET https://api.cloudways.com/api/v2/server_sizes` + `/api/v2/providers` (DO, Vultr, Linode, AWS, GCP managed tiers).
-4. **Vultr (`vultr`)**: Unauthenticated `GET https://api.vultr.com/v2/plans?type=all` and `GET /v2/plans-metal` -> maps `vc2`, `vhf`, `vhp`, `voc`, `vcg` (GPU).
-5. **Hetzner (`hetzner`)**: `GET https://api.hetzner.cloud/v1/pricing` & `GET /v1/server_types` -> maps per-location (`fsn1`, `nbg1`, `hel1`, `ash`, `hil`, `sin`) net/gross hourly & monthly caps + IPv4 add-on price.
-6. **Akamai / Linode (`akamai_linode`)**: Unauthenticated `GET https://api.linode.com/v4/linode/types` -> maps `price.hourly`, `price.monthly`, and regional price overrides (`region_prices[]`).
-7. **Google Cloud (`gcp`)**: Cloud Billing Catalog API `GET https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus` -> combines vCPU + RAM SKU components per machine family (`e2`, `n2`, `c3`, `a2`/`a3` GPU).
-8. **AWS (`aws`)**: Bulk Price List API `https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/{region}/index.json` streamed via Go `json.Decoder` token stream (zero OOM).
-9. **Microsoft Azure (`azure`)**: Unauthenticated `GET https://prices.azure.com/api/retail/prices?$filter=serviceName eq 'Virtual Machines'`.
-10. **OVHcloud (`ovhcloud`)**: `GET https://api.ovh.com/1.0/order/catalog/public/cloud?ovhSubsidiary=US`.
-11. **Scaleway (`scaleway`)**: `GET https://api.scaleway.com/instance/v1/zones/{zone}/products/servers`.
-12. **Oracle Cloud (`oracle_cloud`)**: `GET https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/` (normalizing `1 OCPU = 2 vCPUs` on x86).
+
+> **Pivot addendum (2026-11-26):** Rewritten for TirpScanner. The 12 per-cloud-provider endpoint mappings (DigitalOcean, Vultr, Hetzner, AWS, etc.) are RETIRED with the cloud catalog; preserved in git history. Live ingestion follows the tier model below.
+
+## 1. Ingestion Tiers & Adapter Rules
+1. **Tier-1 — Vendor pricing feeds & APIs**: Where a SaaS vendor exposes a pricing API, structured pricing page, or changelog feed, the `CatalogAdapter` polls it directly (hourly). Raw payloads are SHA-256 hashed and archived for provenance.
+2. **Tier-2 — Affiliate network product catalogs**: Impact, CJ, and PartnerStack product feeds provide plan names, list prices, and promotion windows; synced every 6 hours and cross-checked against vendor sources before going live.
+3. **Tier-3 — Curated deal intake**: Time-boxed coupons and launch deals without machine-readable feeds enter via the admin curation flow with mandatory `official_source_url`, `expires_at`, and eligibility notes; every curated deal requires source-link verification before publish.
+4. **Mapping rules (all tiers)**: Every ingested record must map to the canonical plan model (`vendor.slug`, `plan.tier_code`, `billing_cycle`, `seat_model`, `monthly_equivalent`, `native_currency`, `tax_included`, `official_source_url`); records missing required fields route to `QUARANTINED`, never live.

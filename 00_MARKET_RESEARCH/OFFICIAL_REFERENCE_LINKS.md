@@ -1,91 +1,92 @@
-# OFFICIAL_REFERENCE_LINKS.md — Verified Official Provider API & Affiliate Documentation Registry
+# OFFICIAL_REFERENCE_LINKS.md — Verified Affiliate-Network, Deal-Feed & Discovery Documentation Registry
 
-**Document ID:** `CS-MR-003`  
-**Verification Date:** `2026-10-28`
+**Document ID:** `CS-MR-003` (stable ID, unchanged since CloudScanr era)  
+**Original Verification Date:** `2026-10-28` (CloudScanr provider-API cut — superseded, see §4)  
+**Pivot Reframe Date:** `2026-11-26`
 
----
-
-## 1. Tier-1 Priority Providers (Article 5 Verified Sources)
-
-### 1.1 DigitalOcean (`digitalocean`)
-- **Official Affiliate Program**: https://www.digitalocean.com/affiliates
-- **Official API Reference Root**: https://docs.digitalocean.com/reference/api/reference/
-- **Pricing & Sizes API (`GET /v2/sizes`)**: https://docs.digitalocean.com/reference/api/reference/sizes/
-- **Server Management API (`Droplets API`)**: https://docs.digitalocean.com/reference/api/reference/droplets/
-- **Droplet Actions API (`Power, Reboot, Resize, Snapshot`)**: https://docs.digitalocean.com/reference/api/reference/droplet-actions/
-- **OAuth 2.0 Documentation**: https://docs.digitalocean.com/reference/api/oauth-api/
-
-### 1.2 UpCloud (`upcloud`)
-- **Official Affiliate Program**: https://upcloud.com/affiliate-program/
-- **Official Affiliate Agreement**: https://upcloud.com/affiliate-program-agreement/
-- **Official Partner Program**: https://upcloud.com/partner-program/
-- **Official REST API Documentation**: https://upcloud.com/docs/tooling/api/
-- **Public Pricing Overview**: https://upcloud.com/pricing/
-
-### 1.3 Cloudways (`cloudways`)
-- **Official Web Hosting Affiliate Program**: https://www.cloudways.com/en/web-hosting-affiliate-program.php
-- **Official API v2 Documentation**: https://developers.cloudways.com/docs
-- **Architecture Enforcement**: CloudScanr strictly implements **Cloudways API v2** (`https://api.cloudways.com/api/v2/`). Legacy API v1 is deprecated and prohibited in all CloudScanr adapters.
-
-### 1.4 Vultr (`vultr`)
-- **Official Referral Program**: https://www.vultr.com/company/referral-program/
-- **Official Partner Program**: https://www.vultr.com/resources/partners/
-- **Partner Legal Terms**: https://www.vultr.com/legal/partner-program/
-- **Official REST API v2 (`Plans, Instances, Bare Metal`)**: https://www.vultr.com/api/
-- **Public Pricing Page**: https://www.vultr.com/pricing/
-
-### 1.5 Hetzner (`hetzner`)
-- **Official Cloud API Reference (`Pricing, Server Types, Servers, Actions`)**: https://docs.hetzner.cloud/reference/cloud
-- **Official Cloud Portal**: https://www.hetzner.com/cloud/
-- **Official Referral Program Policy**: https://docs.hetzner.com/general/others/referral-program/
-- **Legal Notice**: https://www.hetzner.com/legal/legal-notice/
-
-### 1.6 Akamai Cloud / Linode (`akamai_linode`)
-- **Linode API v4 Reference Root**: https://techdocs.akamai.com/linode-api/reference/api
-- **Unauthenticated Pricing & Types API (`GET /v4/linode/types`)**: https://techdocs.akamai.com/linode-api/reference/get-linode-types
-- **Create Linode Instance (`POST /v4/linode/instances`)**: https://techdocs.akamai.com/linode-api/reference/post-linode-instance
-- **List Linode Instances (`GET /v4/linode/instances`)**: https://techdocs.akamai.com/linode-api/reference/get-linode-instances
-- **Public Cloud Pricing**: https://www.akamai.com/cloud/pricing
-
-### 1.7 Google Cloud Platform (`gcp`)
-- **Official Google Cloud Affiliate Program**: https://cloud.google.com/affiliate-program
-- **Official Cloud Billing Catalog API (`services.skus.list`)**: https://docs.cloud.google.com/billing/v1/how-tos/catalog-api
-- **Google Cloud Partner Network**: https://cloud.google.com/partners
-- **Compute Engine REST API**: https://cloud.google.com/compute/docs/reference/rest/v1/instances
-
-### 1.8 Amazon Web Services (`aws`)
-- **Official AWS Price List Bulk & Query API**: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/price-changes.html
-- **AWS Partner Network (APN)**: https://aws.amazon.com/partners/
-- **AWS Partner Programs**: https://aws.amazon.com/partners/programs/
+> **Pivot Note (2026-11-26):** TirpScanner (`tirpscanr.com` — registered, wiring pending) ingests
+> SaaS/AI-tool deals from affiliate networks, vendor promo sources, and launch
+> feeds. Cloud provider pricing/management APIs are **RETIRED**. See
+> `TIRPSCANNER_PIVOT.md`.
 
 ---
 
-## 2. Tier-2 Global & Regional Providers
+## 1. Tier-1 Affiliate Networks & SaaS Referral Platforms (Live Sources)
 
-- **Contabo Affiliate Program (CJ)**: https://contabo.com/en/affiliate-program/
-- **Contabo REST API (`v1/compute/instances`)**: https://contabo.com/en/contabo-api/
-- **Hostinger Affiliate Program**: https://www.hostinger.com/affiliates
-- **Hostinger Affiliate Agreement**: https://www.hostinger.com/legal/affiliate-program-agreement
-- **Hostinger Partner Program**: https://www.hostinger.com/support/hostinger-partner-program/
-- **Microsoft Azure Retail Prices REST API**: https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices
-- **Microsoft AI Cloud Partner Program**: https://partner.microsoft.com/
-- **OVHcloud Partner & Referral Advisory Program**: https://partner.ovhcloud.com/en/referral-advisory-path/
-- **OVHcloud Public Catalog & Management API**: https://api.us.ovhcloud.com/console/?section=%2Forder&branch=v1 & https://api.eu.ovhcloud.com/console/
-- **Scaleway Partner Program**: https://www.scaleway.com/en/partners-program/
-- **Scaleway Developers API**: https://www.scaleway.com/en/developers/api
-- **Scaleway Instance Pricing Docs**: https://www.scaleway.com/en/docs/instances/reference-content/understanding-instance-pricing/
-- **Kamatera Affiliate Terms**: https://www.kamatera.com/affiliate-terms/
-- **Kamatera Partners & Reseller Program**: https://www.kamatera.com/partners-program/
-- **Kamatera Cloud API**: https://www.kamatera.com/products/api/
-- **IONOS Cloud Partner Program**: https://docs.ionos.com/cloud/partner-program
-- **Oracle Cloud Price List & Cost Estimator**: https://www.oracle.com/cloud/price-list/ & https://www.oracle.com/cloud/costestimator.html
-- **Oracle PartnerNetwork (OPN)**: https://www.oracle.com/partner/
-- **Cloudflare Partner Network**: https://www.cloudflare.com/partners/
-- **RunPod Referral & GraphQL API**: https://docs.runpod.io/sdks/graphql/manage-pods
+### 1.1 PartnerStack (`partnerstack`)
+
+- **Official Partner Marketplace**: https://partnerstack.com/marketplace
+- **Official REST API Documentation**: https://partnerstack.com/docs/api
+- **Publisher/Affiliate Signup**: https://partnerstack.com/affiliates
+
+### 1.2 Impact Radius (`impact`)
+
+- **Official Publisher Platform**: https://impact.com/publishers/
+- **Official API Reference**: https://developer.impact.com/
+- **Publisher Signup**: https://impact.com/publishers/
+
+### 1.3 CJ Affiliate (`cj_affiliate`)
+
+- **Official Publisher Program**: https://www.cj.com/publishers
+- **Official Developer Portal (REST APIs)**: https://developers.cj.com/
+- **Publisher Signup**: https://www.cj.com/
+
+### 1.4 Awin (`awin`)
+
+- **Official Publisher Platform**: https://www.awin.com/us/publishers
+- **Official API Documentation**: https://developer.awin.com/
+- **Publisher Signup**: https://www.awin.com/
+
+### 1.3 FirstPromoter (`firstpromoter`)
+
+- **Official Affiliate Software for SaaS**: https://firstpromoter.com/
+- **Official API Documentation**: https://docs.firstpromoter.com/
+
+### 1.6 Rewardful (`rewardful`)
+
+- **Official Stripe Affiliate Platform**: https://www.rewardful.com/
+- **Official API Documentation**: https://www.rewardful.com/docs/api
+
+### 1.7 ShareASale (`shareasale`)
+
+- **Official Affiliate Signup**: https://www.shareasale.com/info/affiliates/
+- **Official API Documentation**: https://account.shareasale.com/a-apimanager.cfm
 
 ---
 
-## 3. Competitor Reference Links
-- **Vantage Instances Comparison**: https://instances.vantage.sh/ (Source Repo: https://github.com/vantage-sh/ec2instances.info)
-- **VPSBenchmarks**: https://www.vpsbenchmarks.com/
-- **CostGoat Hetzner Pricing Analysis**: https://costgoat.com/pricing/hetzner
+## 2. Tier-2 Deal Marketplaces & Launch/Discovery Feeds
+
+- **AppSumo Partner Program**: https://appsumo.com/partners/
+- **AppSumo Marketplace**: https://appsumo.com/
+- **StackSocial**: https://stacksocial.com/
+- **PitchGround**: https://pitchground.com/
+- **Product Hunt GraphQL API**: https://api.producthunt.com/v2/docs
+- **Product Hunt**: https://www.producthunt.com/
+
+---
+
+## 3. Discovery Reference Links (Citation Only — Never Scraped for Reviews)
+
+- **G2**: https://www.g2.com/
+- **Capterra**: https://www.capterra.com/
+- **GetApp**: https://www.getapp.com/
+- **Software Advice**: https://www.softwareadvice.com/
+- **TrustRadius**: https://www.trustradius.com/
+- **FutureTools (AI Directory)**: https://www.futuretools.io/
+- **There's An AI For That**: https://theresanaiforthat.com/
+- **SaaSHub**: https://saashub.com/
+- **AlternativeTo**: https://alternativeto.net/
+
+---
+
+## 4. Superseded 2026-10-28 CloudScanr Cut (History — Not Live Scope)
+
+On 2026-10-28 this registry listed 18 cloud providers' pricing APIs
+(DigitalOcean `/v2/sizes`, Vultr `/v2/plans`, Hetzner `/v1/pricing`, Linode
+`/v4/linode/types`, AWS Bulk Price List, GCP Billing Catalog, Azure Retail
+Prices, and others), BYOC server-management APIs (Droplets, Cloud API v1,
+Compute Engine, ARM), and cloud-affiliate programs, plus cloud-comparison
+competitor links (`instances.vantage.sh`, `vpsbenchmarks.com`, `costgoat.com`).
+Those sources are **RETIRED** under the 2026-11-26 pivot; the sections above
+replace them for all live ingestion planning. Retired detail survives in frozen
+work-order history (`11_WORK_ORDERS_0001_TO_1000/`, read-only).

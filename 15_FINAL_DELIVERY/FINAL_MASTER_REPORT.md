@@ -49,3 +49,13 @@ Counts above describe the pre-cut audit state and are preserved as record. Since
 implemented-vs-planned status per path (tokens are v1 HMAC-SHA256, router is
 net/http ServeMux) — see `COMMERCIALIZATION.md` at the repository root for the
 authoritative implementation ledger.
+
+## Addendum 2026-11-26 (TirpScanner pivot)
+This report (audit date 2026-10-28) is preserved as the CloudScanr-era record; nothing
+above was rewritten. The repository has pivoted to **TirpScanner**, a global SaaS/AI-tool
+& software affiliate deal scanner (`tirpscanr.com` family — registered, wiring pending). Retired: cloud
+catalog, BYOC connection, provisioning/management, resale, and the 22 provisioning safety
+scenarios. Live: SaaS/AI-tool catalog, deal scan / price-drop detection, affiliate
+monetization, content hub, admin & affiliate operations, and platform (auth, security,
+testing, DevOps). Revised adapter law: affiliate + catalog/deal-ingestion adapters live;
+management/BYOC + reseller adapters retired. See `TIRPSCANNER_PIVOT.md`.

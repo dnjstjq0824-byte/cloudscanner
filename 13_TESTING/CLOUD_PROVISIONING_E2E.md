@@ -1,3 +1,5 @@
+> **RETIRED SCOPE — TirpScanner pivot (2026-11-26):** all 22 server provisioning/management safety scenarios were removed from live scope with BYOC. This file is CloudScanr-era history, preserved as record; do not run or build from it. Live E2E gates are `SEARCH_E2E.md`, `AFFILIATE_E2E.md`, and `SECURITY_E2E.md`; see `TIRPSCANNER_PIVOT.md` at the repository root.
+
 # CLOUD_PROVISIONING_E2E.md — 22 Mandatory Server Provisioning & Management Safety Tests (Article 24)
 **Document ID:** `CS-TST-004`
 

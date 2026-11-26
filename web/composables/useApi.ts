@@ -1,4 +1,5 @@
 import type { ProblemDetails } from '~/types/api'
+import { buildDealUrl, buildSessionHeaders, DEFAULT_DEV_API_BASE, resolveApiUrl } from '~/utils/api-urls'
 
 /** Normalized API error carrying problem details when present. */
 export class ApiError extends Error {
@@ -36,9 +37,6 @@ export interface ApiOptions {
   headers?: Record<string, string>
 }
 
-/** Default development API origin; anything else means direct absolute calls. */
-const DEFAULT_DEV_API_BASE = 'http://localhost:8080'
-
 function newIdempotencyKey(): string {
   try {
     return crypto.randomUUID()
@@ -52,18 +50,14 @@ function newIdempotencyKey(): string {
  *
  * Development (default apiBase) issues same-origin calls through the Nitro
  * `/api/**` proxy. Any explicit NUXT_PUBLIC_API_BASE (e.g. production
- * https://api.cloudscanr.com) issues direct absolute calls with Bearer auth;
+ * https://api.tirpscanr.com) issues direct absolute calls with Bearer auth;
  * the API authorizes those origins via exact-match CORS.
  */
 export function useApi() {
   const apiBase = (useRuntimeConfig().public.apiBase as string) || DEFAULT_DEV_API_BASE
-  const useAbsolute = apiBase !== DEFAULT_DEV_API_BASE
 
   function resolveUrl(path: string): string {
-    if (path.startsWith('/api/') && useAbsolute) {
-      return `${apiBase}${path}`
-    }
-    return path
+    return resolveApiUrl(apiBase, path)
   }
 
   async function request<T>(path: string, opts: ApiOptions = {}): Promise<T> {
@@ -72,17 +66,10 @@ export function useApi() {
       if (v !== undefined && v !== '') cleanQuery[k] = v
     }
     const method = opts.method ?? 'GET'
-    const headers: Record<string, string> = { ...(opts.headers ?? {}) }
-    if (!opts.anonymous) {
-      const token = useCookie('cs_session').value
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
-      }
-      const orgId = useCookie('cs_org').value
-      if (orgId) {
-        headers['X-Organization-Id'] = orgId
-      }
-    }
+    const headers = buildSessionHeaders(
+      { session: useCookie('cs_session').value, org: useCookie('cs_org').value },
+      { anonymous: opts.anonymous, extra: opts.headers },
+    )
     if (method !== 'GET') {
       headers['Idempotency-Key'] = opts.idempotencyKey || newIdempotencyKey()
     }
@@ -102,7 +89,7 @@ export function useApi() {
   const baseURL = apiBase
 
   function dealUrl(slug: string, src: string): string {
-    return `${apiBase}/go/${slug}?src=${src}`
+    return buildDealUrl(apiBase, slug, src)
   }
 
   return { request, baseURL, dealUrl }

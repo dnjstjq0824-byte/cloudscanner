@@ -33,12 +33,12 @@ AWS KMS / HashiCorp Vault Transit Engine, Go `crypto/aes` + `crypto/cipher` (AES
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `provider_credentials_metadata`, `affiliate_accounts`, `affiliate_payouts`, `audit_logs`, `sessions`
 
-- `provider_credentials_metadata` now vaults affiliate-network/feed credentials (never user cloud accounts — BYOC retired). Any residual BYOC credential rows are quarantined for secure deletion, never used.
+- `provider_credentials_metadata` is RETIRED with BYOC (no live reads/writes, per `03_DATABASE/TABLE_DICTIONARY.md`); residual rows are quarantined for secure deletion, never used. A future affiliate-credential vault needs a new migration plus code.
 - Enforces strict referential integrity (`FOREIGN KEY`), `UUID` / `ULID` identifiers, `NUMERIC(18,8)` monetary precision, and `TIMESTAMPTZ` UTC timestamps.
 - Multi-tenant tables enforce PostgreSQL Row-Level Security (`RLS`) keyed on `organization_id`.
 
@@ -65,7 +65,7 @@ Security & Audit Log Console (`/dashboard/security-logs` and `/admin/security-ev
 ## 8. Core Processing Logic
 
 1. Envelope Encryption with AAD Binding: Passing `org_id:credential_id:network_id` as GCM Additional Authenticated Data (AAD) makes it cryptographically impossible for an attacker with DB access to copy a ciphertext blob from one tenant row to another tenant row and decrypt it.
-2. Cryptographic Operation Approval Token: When a user approves a payout or credential rotation, the backend records a signed approval over `(user_id, org_id, action, target_id, amount_or_scope, expires_at)` valid for 3 minutes.
+2. Cryptographic Operation Approval Token: When a user approves a payout or credential rotation, the backend records a signed approval over `(user_id, org_id, action, target_id, amount_or_scope, expires_at)` valid for 5 minutes.
 
 ---
 

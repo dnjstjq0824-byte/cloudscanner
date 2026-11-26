@@ -22,7 +22,7 @@ Database Agent, Backend Agent, Security Auditor.
 
 ## 3. User Scenarios
 
-1. Running `golang-migrate` applies `000001_extensions_and_types.up.sql` through `000012_seed_reference_data.up.sql` cleanly on a fresh PostgreSQL 16 instance.
+1. Running `golang-migrate` applies `000001_extensions_and_types.up.sql` through `000011_seed_providers_and_roles.up.sql` cleanly on a fresh PostgreSQL 16 instance (`000012` rollback reference lives in `03_DATABASE/down_migrations_reference/`, outside initdb reach).
 2. An application transaction sets `SET LOCAL app.current_org_id = '...';` and queries `price_alerts`; PostgreSQL RLS guarantees zero rows from other organizations can ever be returned.
 3. An attempt to `UPDATE` or `DELETE` a finalized row in `commissions` or `audit_logs` is blocked at the database engine level by an immutability trigger.
 
@@ -34,7 +34,7 @@ PostgreSQL 16, `pgcrypto`, `pg_trgm`, `btree_gist`, `golang-migrate/migrate/v4`,
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Live PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `users`, `organizations`, `organization_members`, `roles`, `sessions`, `auth_identities`, `cloud_providers`, `provider_regions`, `provider_products`, `provider_capabilities`, `provider_data_sources`, `product_skus`, `product_specs`, `price_snapshots`, `price_components`, `billing_terms`, `promotions`, `fx_rates`, `tax_policies`, `price_sync_jobs`, `affiliate_programs`, `affiliate_accounts`, `affiliate_campaigns`, `affiliate_links`, `affiliate_clicks`, `affiliate_conversions`, `commissions`, `commission_adjustments`, `affiliate_payouts`, `search_events`, `comparison_lists`, `favorites`, `price_alerts`, `articles`, `provider_reviews`, `audit_logs`, `background_jobs`, `outbox_events`, `admin_actions`, `feature_flags`, `system_settings`

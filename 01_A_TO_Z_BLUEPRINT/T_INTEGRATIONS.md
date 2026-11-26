@@ -34,7 +34,7 @@ Go `golang.org/x/time/rate`, `sony/gobreaker`, OpenTelemetry HTTP client instrum
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `provider_data_sources`, `affiliate_programs`, `fx_rates`, `price_alerts`

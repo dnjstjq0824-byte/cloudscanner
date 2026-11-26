@@ -2,7 +2,7 @@
 
 **Document ID:** `CS-ARCH-002`
 
-> **Pivot addendum (2026-11-26):** Diagrams refreshed for TirpScanner. The BYOC worker, KMS envelope encryption, and cloud management APIs are removed; the live platform ingests SaaS/AI-tool deals and monetizes via affiliate. The BYOC provisioning state machine is preserved below as retired history.
+> **Pivot addendum (2026-11-26):** Diagrams refreshed for TirpScanner. The BYOC worker and cloud management APIs are removed, while KMS envelope encryption now protects affiliate/integration credentials; the live platform ingests SaaS/AI-tool deals and monetizes via affiliate. The BYOC provisioning state machine is preserved below as retired history.
 
 ---
 

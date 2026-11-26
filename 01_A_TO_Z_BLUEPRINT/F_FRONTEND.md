@@ -34,7 +34,7 @@ Nuxt 3.13+, Vue 3.5 Composition API, TypeScript 5.6 (Strict mode), Pinia state s
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `comparison_lists`, `favorites`, `price_alerts`, `articles`

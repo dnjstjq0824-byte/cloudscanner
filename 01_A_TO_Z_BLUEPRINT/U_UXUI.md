@@ -33,7 +33,7 @@ TailwindCSS custom design tokens (`05_UXUI/DESIGN_SYSTEM.md`), Inter + JetBrains
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `All user-facing and admin-facing tables`

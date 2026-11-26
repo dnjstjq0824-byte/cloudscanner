@@ -35,7 +35,7 @@ HISTORICAL: Go network cost normalizer, PostgreSQL `provider_regions` with PostG
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 HISTORICAL use of `provider_regions`, `product_specs`, `price_components`, `billing_terms` for network modeling is retired. Tables remain live for SaaS catalog purposes (see `P_POSTGRESQL.md`).
 
@@ -59,7 +59,7 @@ RETIRED page: Global Region Map & Region Price Comparison Matrix (`/region-compa
 
 ## 8. Core Processing Logic
 
-HISTORICAL (retired): 3 bandwidth billing structures (outbound-only metered, bidirectional metered, unmetered fair-use, account-pooled transfer, high free-egress thresholds).
+HISTORICAL (retired): 5 bandwidth billing structures (outbound-only metered, bidirectional metered, unmetered fair-use, account-pooled transfer, high free-egress thresholds).
 
 ---
 

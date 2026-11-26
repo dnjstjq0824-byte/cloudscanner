@@ -2,7 +2,7 @@ screen_id,portal_group,screen_name,route_path,render_mode,required_role,bound_ap
 SCR-PUB-01,Public_Web,Home,/,SSR,PUBLIC,"GET /api/v1/search/skus, GET /api/v1/promotions","Hero NL Deal Search Bar, Category Pills, Top Deal Leaderboard, Vendor Trust Strip",WO-CS-0451
 SCR-PUB-02,Public_Web,Global Deal Search,/search,SSR+CSR,PUBLIC,"GET /api/v1/search/skus, POST /api/v1/search/parse-query","Faceted Sidebar (Category, Price, Billing Cycle, Trial, Discount, Rating), Grid / Card Toggle, Sticky Compare Tray",WO-CS-0455
 SCR-PUB-03,Public_Web,AI Tool Comparison,/ai-tools-comparison,SSR+CSR,PUBLIC,GET /api/v1/search/skus?category=AI_TOOLS,"Free vs Paid toggle, Per-Seat Price column, Monthly vs Annual switcher",WO-CS-0460
-SCR-PUB-04,Public_Web,Software Category Comparison,/software-comparison,SSR+CSR,PUBLIC,GET /api/v1/catalog/gpu,"Plan Tiers, $/seat/mo, Trial Days, Discount %, Deal Expiry badge",WO-CS-0465
+SCR-PUB-04,Public_Web,Software Category Comparison,/software-comparison,SSR+CSR,PUBLIC,GET /api/v1/search/skus?category=SOFTWARE,"Plan Tiers, $/seat/mo, Trial Days, Discount %, Deal Expiry badge",WO-CS-0465
 SCR-PUB-05,Public_Web,Vendor Directory,/providers,SSR,PUBLIC,GET /api/v1/providers,"SaaS Vendor Cards, HQ Country, Tool Count, Affiliate & Deal Badges, Verified Rating",WO-CS-0470
 SCR-PUB-06,Public_Web,Vendor Detail,/providers/[slug],SSR,PUBLIC,GET /api/v1/providers/{slug},"Vendor Overview, Tool List, Subscription Plans, Active Deals & Coupons, Verified Customer Reviews",WO-CS-0475
 SCR-PUB-07,Public_Web,Tool & Plan Detail,/products/[sku_id],SSR,PUBLIC,GET /api/v1/catalog/skus/{sku_id},"Normalized Plan & Deal Breakdown, Historical Price Chart, Freshness Badge, Official Link vs Affiliate CTA, One-Click Price Alert",WO-CS-0480
@@ -12,8 +12,8 @@ SCR-PUB-10,Public_Web,Discount & Offers,/offers,SSR,PUBLIC,GET /api/v1/promotion
 SCR-PUB-11,Public_Web,Tutorials,/tutorials,SSR,PUBLIC,GET /api/v1/content/articles?type=TUTORIAL,"Step-by-Step Tool Guides, Stack Blueprints, Subscription Savings Playbooks",WO-CS-0751
 SCR-PUB-12,Public_Web,Reviews,/reviews,SSR,PUBLIC,GET /api/v1/content/reviews,"Verified Customer Reviews, Value/Features/Support Sub-Scores",WO-CS-0755
 SCR-PUB-13,Public_Web,Best Value Rankings,/best-value-rankings,SSR+CSR,PUBLIC,GET /api/v1/rankings/best-value,"Use-Case Presets, Custom Weight Sliders (Price/Features/Trial), Unbiased Score Explanation",WO-CS-0490
-SCR-PUB-14,Public_Web,Deal Trends,/deal-trends,SSR,PUBLIC,GET /api/v1/regions/comparison,"Category Price Index, Discount % Matrix, Expiring-Soon Filter",WO-CS-0495
-SCR-PUB-15,Public_Web,Stack Cost Scenarios,/cost-estimation,SSR+CSR,PUBLIC,POST /api/v1/pricing/estimate-kubernetes,"Startup Stack, Agency Stack, and AI-Heavy Stack Subscription Templates",WO-CS-0520
+SCR-PUB-14,Public_Web,Deal Trends,/deal-trends,SSR,PUBLIC,GET /api/v1/promotions,"Category Price Index, Discount % Matrix, Expiring-Soon Filter",WO-CS-0495
+SCR-PUB-15,Public_Web,Stack Cost Scenarios,/cost-estimation,SSR+CSR,PUBLIC,POST /api/v1/pricing/estimate,"Startup Stack, Agency Stack, and AI-Heavy Stack Subscription Templates",WO-CS-0520
 SCR-PUB-16,Public_Web,Affiliate Disclosure,/affiliate-disclosure,SSR,PUBLIC,GET /api/v1/affiliate/disclosure,"FTC / KFTC Compliance Policy, Editorial Independence Guarantee, Cash vs Credit Referral Transparency",WO-CS-0500
 SCR-USR-01,User_Dashboard,Register (회원가입),/register,SSR,GUEST_ONLY,POST /api/v1/auth/register,"Email/Password Argon2id Signup, Password Entropy Meter, Terms & Privacy Consent",WO-CS-0101
 SCR-USR-02,User_Dashboard,Login (로그인),/login,SSR,GUEST_ONLY,"POST /api/v1/auth/login, POST /api/v1/auth/mfa/verify","Email/Password Login, TOTP/WebAuthn Passkey Challenge, OAuth Social Login",WO-CS-0105

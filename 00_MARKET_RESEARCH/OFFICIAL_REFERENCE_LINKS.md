@@ -37,7 +37,7 @@
 - **Official API Documentation**: https://developer.awin.com/
 - **Publisher Signup**: https://www.awin.com/
 
-### 1.3 FirstPromoter (`firstpromoter`)
+### 1.5 FirstPromoter (`firstpromoter`)
 
 - **Official Affiliate Software for SaaS**: https://firstpromoter.com/
 - **Official API Documentation**: https://docs.firstpromoter.com/

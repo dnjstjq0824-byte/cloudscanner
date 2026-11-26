@@ -111,7 +111,7 @@ Public: `/`, `/search`, `/calculator`, `/rankings`, `/providers`,
 `useApi`, `useTheme`, `useToast`; Pinia `auth` store; `auth`/`admin`/`guest`
 middleware. Breakpoints verified: 360 / 768 / 1280 (see §6).
 
-## 3. Data pipeline E2E
+## 5. Data pipeline E2E
 
 Register — login — Bearer session — connect cloud (KMS-sealed) — set budget — estimate TCO — sign HMAC approval — execute provision (idempotent, gates
 enforced) → inventory + audit trail → admin moderation + notices → storefront

@@ -1,5 +1,5 @@
 {
-  "name": "cloudscanr-web",
+  "name": "tirpscanner-web",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.0",
@@ -11,7 +11,7 @@
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "typecheck": "nuxt prepare && vue-tsc --noEmit",
-    "deploy:pages": "wrangler pages deploy dist --project-name cloudscanr-web --commit-dirty=true"
+    "deploy:pages": "wrangler pages deploy dist --project-name tirpscanner-web --commit-dirty=true"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.5",

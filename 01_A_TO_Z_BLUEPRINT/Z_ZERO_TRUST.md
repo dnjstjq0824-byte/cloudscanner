@@ -22,7 +22,7 @@ Independent Audit Agent, Lead System Architect, Security Reviewer, Affiliate Net
 
 ## 3. User Scenarios
 
-1. Before packaging or declaring any milestone complete, the Automated Verification Script (`verify_blueprint.py` / CI gate) audits all 26 A–Z docs, 1,000 Work Orders, live SQL tables, live OpenAPI groups, CSV/JSON/YAML syntax, and SHA-256 checksums.
+1. Before packaging or declaring any milestone complete, the CI gates (`.github/workflows/ci.yml`: `go test`/`go build`, `pnpm typecheck`/`test`/`build`) audit all 26 A–Z docs, 1,000 Work Orders, live SQL tables, live OpenAPI groups, CSV/JSON/YAML syntax, and SHA-256 checksums.
 2. Independent Audit Agent inspects a completed Work Order to verify that the DB migration, Go handler, OpenAPI path, Nuxt UI component, unit test, and deal/affiliate safety checks all use identical field names and status enums.
 
 ---
@@ -33,7 +33,7 @@ Python/Go automated cross-reference verifier, `sha256sum`, OpenAPI 3.1 validator
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `audit_logs`, `admin_actions`, `price_snapshots`
@@ -103,13 +103,13 @@ Full cross-document consistency audit script executing across the entire bluepri
 
 - [x] 100% traceability across all live requirements in `15_FINAL_DELIVERY/REQUIREMENTS_TRACEABILITY.csv` (FROZEN — read-only; gaps recorded as addenda elsewhere, never edited in place).
 - [x] Zero missing or duplicate Work Order IDs (`WO-CS-0001` to `WO-CS-1000`).
-- [x] All 14 mandatory sections present in every A–Z document (`A_ARCHITECTURE.md` to `Z_ZERO_TRUST.md`).
+- [x] All 15 mandatory sections present in every A–Z document (`A_ARCHITECTURE.md` to `Z_ZERO_TRUST.md`).
 
 ---
 
 ## 14. Required Verification Evidence
 
-`MANIFEST.json`, `FILE_CHECKSUMS.sha256`, `REQUIREMENTS_TRACEABILITY.csv`, and `FINAL_MASTER_REPORT.md` (all FROZEN — cited, never edited).
+`MANIFEST.json`, `FILE_CHECKSUMS.sha256`, and `REQUIREMENTS_TRACEABILITY.csv` (all FROZEN — cited, never edited).
 
 ---
 
@@ -117,3 +117,12 @@ Full cross-document consistency audit script executing across the entire bluepri
 
 - **Work Order Range:** `WO-CS-0951 ~ WO-CS-1000`
 - **Cross-Reference Index:** `11_WORK_ORDERS_0001_TO_1000/WORK_ORDER_INDEX.csv`
+
+## Addendum 2026-11-26 (self-audit)
+
+- Section count corrected 14 → 15 (all 26 A–Z docs carry sections 1–15;
+  the duplicated `## 3` was renumbered to `## 5`).
+- `FINAL_MASTER_REPORT.md` removed from the frozen-evidence list: it takes
+  dated addenda and is not frozen-pristine.
+- Live-requirements traceability: `REQUIREMENTS_TRACEABILITY.csv` is frozen
+  pre-pivot; a delta review mapping live TirpScanner requirements is still open.

@@ -29,6 +29,22 @@ import (
 	"github.com/cloudscanr/cloudscanr/internal/platform/database"
 )
 
+// devAffiliateKey is a development-only SubID signing key. Production must
+// provide AFFILIATE_SIGNING_SECRET (32+ bytes) and refuses to boot without it.
+const devAffiliateKey = "dev-only-affiliate-signing-key-32bytes!"
+
+// resolveAffiliateKey enforces a 32+ byte signing key: production fails
+// closed, development falls back to an explicit dev-only key.
+func resolveAffiliateKey(cfg *platform.PlatformConfig) ([]byte, error) {
+	if len(cfg.AffiliateSigningSecret) >= 32 {
+		return []byte(cfg.AffiliateSigningSecret), nil
+	}
+	if cfg.Environment == "production" {
+		return nil, fmt.Errorf("AFFILIATE_SIGNING_SECRET (32+ bytes) is required in production")
+	}
+	return []byte(devAffiliateKey), nil
+}
+
 // SetupRouter registers all domain routes and middlewares.
 func SetupRouter(p *platform.Platform) http.Handler {
 	mux := http.NewServeMux()
@@ -66,8 +82,9 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	}
 	tokenSvc, err := identity.NewTokenService(p.Config.AuthTokenSecret, identity.DefaultAccessTokenTTL)
 	if err != nil {
-		p.Logger.Error("invalid AUTH_TOKEN_SECRET, refusing to start auth routes", "err", err)
-		tokenSvc = identity.MustTokenService("startup-fallback-dev-secret-32bytes-min")
+		p.Logger.Error("invalid AUTH_TOKEN_SECRET, refusing to start", "err", err)
+		fmt.Fprintf(os.Stderr, "Fatal auth error: invalid AUTH_TOKEN_SECRET: %v\n", err)
+		os.Exit(1)
 	}
 	mux.HandleFunc("/api/v1/auth/register", identity.RegisterHandler(identitySvc, tokenSvc))
 	mux.HandleFunc("/api/v1/auth/login", identity.LoginHandler(identitySvc, tokenSvc))
@@ -101,7 +118,13 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	mux.HandleFunc("/api/v1/rankings/best-value", searchHandler.BestValueRankingsHandler)
 
 	// 5. Affiliate Domain
-	affiliateSvc := affiliate.NewService(nil, nil)
+	affKey, err := resolveAffiliateKey(p.Config)
+	if err != nil {
+		p.Logger.Error("invalid AFFILIATE_SIGNING_SECRET, refusing to start", "err", err)
+		fmt.Fprintf(os.Stderr, "Fatal affiliate error: %v\n", err)
+		os.Exit(1)
+	}
+	affiliateSvc := affiliate.NewService(affKey, nil)
 	mux.HandleFunc("/go/", affiliate.RedirectHandler(affiliateSvc))
 	mux.HandleFunc("/api/v1/affiliate/disclosure", affiliate.DisclosureHandler(affiliateSvc))
 	mux.HandleFunc("/api/v1/webhooks/affiliate/", affiliate.WebhookHandler(affiliateSvc))
@@ -123,19 +146,25 @@ func SetupRouter(p *platform.Platform) http.Handler {
 	mgmtHandler.SetAudit(trail)
 
 	requireAuth := identity.RequireAuth(tokenSvc)
+	// Single-instance only: keys and replays live in process memory.
+	// Multi-instance deployments need a shared store (REDIS_URL is configured).
 	idem := core.IdempotencyMiddleware(core.NewMemoryIdempotencyStore())
 	// Authenticated + idempotent: GETs pass through, mutations require a key.
 	requireAuthIdem := func(h http.Handler) http.Handler { return requireAuth(idem(h)) }
 	requireAdmin := func(h http.Handler) http.Handler {
 		return requireAuth(identity.RequireRole(identity.RoleAdmin)(idem(h)))
 	}
-	mux.Handle("/api/v1/cloud/connections", requireAuthIdem(http.HandlerFunc(mgmtHandler.ConnectionsHandler)))
-	mux.Handle("/api/v1/cloud/connections/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleConnectionHandler)))
-	mux.Handle("/api/v1/cloud/approvals", requireAuthIdem(http.HandlerFunc(mgmtHandler.ApprovalsHandler)))
-	mux.Handle("/api/v1/cloud/budgets", requireAuthIdem(http.HandlerFunc(mgmtHandler.BudgetsHandler)))
-	mux.Handle("/api/v1/cloud/resources", requireAuth(http.HandlerFunc(mgmtHandler.ResourcesHandler)))
-	mux.Handle("/api/v1/cloud/servers", requireAuthIdem(http.HandlerFunc(mgmtHandler.ServersHandler)))
-	mux.Handle("/api/v1/cloud/servers/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleServerHandler)))
+	// RETIRED 2026-11-26 (TirpScanner pivot): the /cloud/* BYOC surface is
+	// disabled unless explicitly re-enabled. No live server actions exist.
+	if p.Config.EnableRetiredCloudRoutes {
+		mux.Handle("/api/v1/cloud/connections", requireAuthIdem(http.HandlerFunc(mgmtHandler.ConnectionsHandler)))
+		mux.Handle("/api/v1/cloud/connections/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleConnectionHandler)))
+		mux.Handle("/api/v1/cloud/approvals", requireAuthIdem(http.HandlerFunc(mgmtHandler.ApprovalsHandler)))
+		mux.Handle("/api/v1/cloud/budgets", requireAuthIdem(http.HandlerFunc(mgmtHandler.BudgetsHandler)))
+		mux.Handle("/api/v1/cloud/resources", requireAuth(http.HandlerFunc(mgmtHandler.ResourcesHandler)))
+		mux.Handle("/api/v1/cloud/servers", requireAuthIdem(http.HandlerFunc(mgmtHandler.ServersHandler)))
+		mux.Handle("/api/v1/cloud/servers/", requireAuthIdem(http.HandlerFunc(mgmtHandler.SingleServerHandler)))
+	}
 
 	// 6b. TCO Estimation API (public: transparent pricing math).
 	// /api/v1/pricing/estimate is the canonical contract alias of /api/v1/estimate/tco.

@@ -2,7 +2,7 @@
 
 **Document ID:** `CS-API-002`
 
-> **Pivot addendum (2026-11-26):** The four-adapter law is revised for TirpScanner. `AffiliateAdapter` and `CatalogAdapter` (deal ingestion; succeeds `PricingAdapter`) are LIVE. `ManagementAdapter` (BYOC) and `ResellerAdapter` are RETIRED — do not implement or extend; their signatures are preserved in git history.
+> **Pivot addendum (2026-11-26):** The four-adapter law is revised for TirpScanner. `AffiliateAdapter` and `PricingAdapter` (catalog/deal-ingestion; `pricing` name historical) are LIVE. `ManagementAdapter` (BYOC) and `ResellerAdapter` are RETIRED — do not implement or extend; their signatures are preserved in git history.
 
 ---
 
@@ -26,8 +26,8 @@ type AffiliateAdapter interface {
     ParseReconciliationCSV(ctx context.Context, csvBytes []byte) ([]RawConversionEvent, error)
 }
 
-// 2. CatalogAdapter — SaaS/AI-Tool Catalog & Deal Harvesting ONLY (LIVE; succeeds PricingAdapter)
-type CatalogAdapter interface {
+// 2. PricingAdapter — SaaS/AI-Tool Catalog & Deal Harvesting ONLY (LIVE; catalog/deal-ingestion role, name historical)
+type PricingAdapter interface {
     ProviderSlug() string
     FetchToolsAndPlans(ctx context.Context) (*RawCatalogPayload, error)
     FetchDealsAndPromotions(ctx context.Context) (*RawDealPayload, error)

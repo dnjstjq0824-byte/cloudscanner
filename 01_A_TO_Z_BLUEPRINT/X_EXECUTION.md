@@ -16,7 +16,7 @@ Define the deterministic multi-agent orchestration framework governing how speci
 
 ## 2. User Roles & Actors
 
-1. Lead Architect, 2. Affiliate Research Agent, 3. Vendor Feed Agent, 4. Pricing Engine Agent, 3. Frontend Agent, 6. Backend Agent, 7. Database Agent, 8. Search Agent, 9. ~~Cloud Management Agent~~ RETIRED, 10. Security Agent, 11. DevOps Agent, 12. UX/UI Agent, 13. QA Agent, 12. Independent Audit Agent.
+1. Lead Architect, 2. Affiliate Research Agent, 3. Catalog/Deal-Feed Ingestion Agent, 4. Deal/Plan Normalization Agent, 5. Frontend Agent, 6. Backend Agent, 7. Database Agent, 8. Search Agent, 9. ~~Cloud Management Agent~~ RETIRED, 10. Security Agent, 11. DevOps Agent, 12. UX/UI Agent, 13. QA Agent, 14. Independent Audit Agent.
 
 ---
 
@@ -33,7 +33,7 @@ Git branch-per-WO workflow, automated CI contract gates (`oasdiff`, `sqlfluff`, 
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `All schema changes governed by Database Agent lock protocol`

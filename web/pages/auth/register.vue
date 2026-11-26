@@ -81,7 +81,7 @@ definePageMeta({
 
 useHead({
   title: 'Create Account',
-  meta: [{ name: 'description', content: 'Create a CloudScanr account and connect your own cloud providers.' }],
+  meta: [{ name: 'description', content: 'Create a TirpScanner account for deal alerts and console access.' }],
 })
 
 const fullName = ref('')

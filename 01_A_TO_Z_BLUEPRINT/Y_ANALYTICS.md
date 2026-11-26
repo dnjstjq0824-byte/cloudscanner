@@ -33,7 +33,7 @@ PostgreSQL analytical materialized views (`mv_daily_affiliate_yield`, `mv_provid
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `affiliate_clicks`, `affiliate_conversions`, `commissions`, `search_events`, `price_snapshots`

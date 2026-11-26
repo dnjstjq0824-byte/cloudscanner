@@ -36,7 +36,7 @@ HISTORICAL: Go `internal/adapters/management` (per-provider server adapters), KM
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 RETIRED tables (historical; see `P_POSTGRESQL.md`):  
 `cloud_connections`, `provider_credentials_metadata`, `cloud_resources`, `resource_operations`, `operation_approvals`, `cloud_usage_snapshots`, `budget_policies`, `resource_reconciliations`

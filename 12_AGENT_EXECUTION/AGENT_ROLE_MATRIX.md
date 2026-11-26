@@ -15,6 +15,6 @@
 | 9 | **~~Cloud Management Agent~~ (RETIRED)** | `0551–0700` | `internal/adapters/management/` (retired), `08_CLOUD_MANAGEMENT/` (retired history) | Identity (`0101–0150`) + KMS (`0551`) | ~~All 22 mandatory Server Safety Scenarios~~ — retired by pivot |
 | 10 | **Security Agent** | `0551–0565`, `0826–0840`, `0921–0940` | `internal/platform/kms/`, `09_SECURITY/` | Core Architecture Lock | KMS AAD tamper test, IDOR matrix fuzzing, SSRF blocklist, log redaction |
 | 11 | **DevOps Agent** | `0075–0100`, `0841–0850` | `14_DEVOPS/`, `.github/workflows/`, `deploy/k8s/`, `deploy/terraform/` | Architecture Topology Lock | CI pipeline execution, Terraform validate, PITR restore drill |
-| 12 | **UX/UI Agent** | `0451–0460`, `0701–0710` | `05_UXUI/`, `web/assets/css/`, `tailwind.config.ts` | Product Requirements Lock | 57-screen inventory coverage, Desktop/Mobile viewport & dark-mode parity |
+| 12 | **UX/UI Agent** | `0451–0460`, `0701–0710` | `05_UXUI/`, `web/assets/css/`, `tailwind.config.ts` | Product Requirements Lock | 44-screen live inventory coverage (16 public + 7 user + 21 admin; 13 retired), Desktop/Mobile viewport & dark-mode parity |
 | 13 | **QA Agent** | `0851–0950` | `13_TESTING/`, `tests/e2e/`, `tests/load/` | Feature Implementation WOs | Playwright E2E (search/affiliate/security), k6 load testing (provisioning fault injection retired) |
 | 14 | **Independent Audit Agent** | `0951–1000` | `15_FINAL_DELIVERY/`, `MANIFEST.json`, `FILE_CHECKSUMS.sha256` | All prior phases | End-to-end traceability verification, SHA-256 integrity, Article 29 audit |

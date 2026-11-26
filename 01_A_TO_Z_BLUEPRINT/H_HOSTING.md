@@ -33,7 +33,7 @@ Terraform / OpenTofu, Kubernetes (EKS / DOKS), Cloudflare DNS + Enterprise WAF +
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `system_settings`, `background_jobs`, `audit_logs`

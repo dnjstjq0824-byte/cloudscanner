@@ -33,7 +33,7 @@ OpenSearch 2.17, Go `opensearch-go/v4` client, deterministic NL Query Parser (`i
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `product_skus`, `price_snapshots`, `search_events`
@@ -64,7 +64,7 @@ Global Command-K Search Bar (`Cmd+K` / `/search`) with instant parsed-filter chi
 
 ## 8. Core Processing Logic
 
-1. Index Alias Pattern: `tirpscanner_skus_read` points to the active timestamped index (`tirpscanner_skus_2026112`). Full reindexing builds a new index in the background and atomically flips the alias.
+1. Index Alias Pattern: `tirpscanner_skus_read` points to the active timestamped index (`tirpscanner_skus_20261126`). Full reindexing builds a new index in the background and atomically flips the alias.
 2. Deterministic Natural Language Query Parser: Uses fast regex/lexer token rules (zero LLM latency in the hot search path) to parse categories, seat counts, billing intervals (`monthly`/`annual`/`lifetime`), price ceilings, trial/freemium flags, coupon presence, platforms, and renewal-cap hints.
 
 ---

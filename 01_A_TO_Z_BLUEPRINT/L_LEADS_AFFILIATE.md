@@ -34,7 +34,7 @@ Go `internal/domain/affiliate`, ULID generator (`oklog/ulid/v2`), HMAC-SHA256 Su
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `affiliate_programs`, `affiliate_accounts`, `affiliate_campaigns`, `affiliate_links`, `affiliate_clicks`, `affiliate_conversions`, `commissions`, `commission_adjustments`, `affiliate_payouts`
@@ -67,7 +67,7 @@ Clear UI distinction between `Official Direct Link` and `Partner Affiliate Link 
 
 1. Zero Fake Conversions Rule: Clicking `/go/{slug}` ONLY inserts an `affiliate_clicks` record. A conversion in `affiliate_conversions` is NEVER created unless confirmed by an authenticated network postback or verified CSV/API report from the affiliate network.
 2. Anti-Fraud Filter: Blocks automated headless browsers, known datacenter crawler ASNs, >10 clicks/min from the same IP subnet (stores privacy-preserving keyed hash `HMAC(ip, daily_salt)`), and self-referrals.
-3. Link Health Monitor: Hourly HEAD/GET check verifies destination URLs return 20/301/302; if a campaign expires or 404s, automatically falls back to the clean vendor URL and alerts Admin.
+3. Link Health Monitor: Hourly HEAD/GET check verifies destination URLs return 200/301/302; if a campaign expires or 404s, automatically falls back to the clean vendor URL and alerts Admin.
 
 ---
 

@@ -26,11 +26,11 @@
   directory is bind-mounted to PostgreSQL `initdb.d` by `docker-compose.yml`, and the
   `*.down.sql` suffix still matches initdb's `*.sql` glob, so fresh volumes would apply
   `000001`–`000011` and then DROP every table. The API migration runner only applies
-  `*.up.sql`, so boot behavior is unchanged. Historical counts1 ("12 SQL migrations",
+  `*.up.sql`, so boot behavior is unchanged. Historical counts above ("12 SQL migrations",
   "`000001`–`000012`") describe the pre-relocation audit state and are preserved as record.
 
 ## Addendum 2026-11-26 (TirpScanner pivot)
-- Brand is now **TirpScanner** (`tirpscanr.com` family — registered, wiring pending); live scope is the
+- Brand is now **TirpScanner** (apex `tirpscanr.com` registered, wiring pending; `api.`/`www.` ASSUMED); live scope is the
   SaaS/AI-tool catalog, deal scan / price-drop detection, and affiliate monetization.
 - `08_CLOUD_MANAGEMENT/` (BYOC/provisioning/day-2 ops) and the 22 provisioning safety
   tests are RETIRED history; checklist lines above describing them are preserved as record.
@@ -38,3 +38,9 @@
   search/affiliate/security E2E docs were reframed for the deal scanner. Frozen artifacts
   (`11_WORK_ORDERS_0001_TO_1000/`, `MANIFEST.json`, `FILE_CHECKSUMS.sha256`,
   `REQUIREMENTS_TRACEABILITY.csv`) untouched. See `TIRPSCANNER_PIVOT.md`.
+
+## Addendum 2026-11-26 (self-audit)
+
+- Live screen inventory is 44 (16 public + 7 user + 21 admin; 13 rows RETIRED in
+  `SCREEN_INVENTORY.csv`). The 57-screen figures above describe the pre-cut
+  state and are preserved as record.

@@ -6,4 +6,4 @@
 ## 1. Immutable Financial Ledger Rules
 - `commissions` records the initial recognized commission upon conversion verification (`PENDING` -> `APPROVED` -> `SETTLED_PAID`).
 - Any modification after initial creation (e.g., customer refund within the network lock period, tier slab upgrade bonus, or FX settlement variance) MUST be recorded as an append-only row in `commission_adjustments`.
-- `reward_type` strictly separates `CASH_COMMISSION` (standard SaaS affiliate payouts via Impact/CJ/PartnerStack) from `SERVICE_CREDIT` (vendors paying in account credit instead of cash).
+- `reward_type` strictly separates `CASH_COMMISSION` (standard SaaS affiliate payouts via Impact/CJ/PartnerStack) from `HOSTING_CREDIT` (vendors paying in account credit instead of cash; enum name historical).

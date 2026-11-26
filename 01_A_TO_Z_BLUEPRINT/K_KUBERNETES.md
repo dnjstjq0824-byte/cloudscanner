@@ -37,7 +37,7 @@ HISTORICAL: Go K8s TCO calculator module, PostgreSQL `extra_specs_jsonb` K8s sch
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 HISTORICAL tables (`product_skus`, `product_specs`, `price_components` K8s rows) are retired for this purpose; the tables themselves remain live for the SaaS catalog (see `C_CATALOG.md`, `P_POSTGRESQL.md`).
 

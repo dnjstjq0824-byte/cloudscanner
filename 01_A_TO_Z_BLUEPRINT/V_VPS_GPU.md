@@ -10,7 +10,7 @@
 
 ## 1. 기능 목적 (Functional Purpose)
 
-HISTORICAL (CloudScanr era): Extend the comparison and management engines beyond basic VPS to support high-growth AI GPU servers (NVIDIA H10, H20, A10, L40S, RTX 4090, AMD MI30X), Bare Metal servers, Managed Databases, Object/Block Storage, and Managed WordPress/App Hosting. This purpose is retired; the sections below preserve the original spec for traceability.
+HISTORICAL (CloudScanr era): Extend the comparison and management engines beyond basic VPS to support high-growth AI GPU servers (NVIDIA H100, H200, A100, L40S, RTX 4090, AMD MI300X), Bare Metal servers, Managed Databases, Object/Block Storage, and Managed WordPress/App Hosting. This purpose is retired; the sections below preserve the original spec for traceability.
 
 ---
 
@@ -35,7 +35,7 @@ HISTORICAL: PostgreSQL `product_specs` specialized hardware columns (`gpu_model`
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 HISTORICAL hardware use of `provider_products`, `product_skus`, `product_specs`, `price_components` is retired. Tables remain live for the SaaS catalog (see `P_POSTGRESQL.md`).
 

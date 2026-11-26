@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-md mx-auto py-12">
     <div class="space-y-2 text-center">
-      <h1 class="text-3xl font-extrabold text-ink tracking-tight">Sign in to CloudScanr</h1>
+      <h1 class="text-3xl font-extrabold text-ink tracking-tight">Sign in to TirpScanner</h1>
       <p class="text-sm text-ink-secondary">Manage your connected clouds from one console.</p>
     </div>
 
@@ -41,7 +41,7 @@
       </button>
 
       <p class="text-center text-xs text-ink-secondary">
-        New to CloudScanr?
+        New to TirpScanner?
         <NuxtLink to="/auth/register" class="text-brand hover:underline font-semibold">Create an account</NuxtLink>
       </p>
     </form>
@@ -59,7 +59,7 @@ definePageMeta({
 
 useHead({
   title: 'Sign In',
-  meta: [{ name: 'description', content: 'Sign in to the CloudScanr BYOC multi-cloud console.' }],
+  meta: [{ name: 'description', content: 'Sign in to the TirpScanner console.' }],
 })
 
 const email = ref('')

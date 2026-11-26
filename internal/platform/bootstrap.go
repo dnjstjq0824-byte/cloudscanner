@@ -15,33 +15,39 @@ import (
 
 // PlatformConfig holds environment configuration for CloudScanr.
 type PlatformConfig struct {
-	Environment      string        `json:"environment"`
-	Domain           string        `json:"domain"`
-	HTTPPort         int           `json:"http_port"`
-	DatabaseURL      string        `json:"database_url"`
-	RedisURL         string        `json:"redis_url"`
-	OpenSearchURL    string        `json:"opensearch_url"`
-	KMSKeyID         string        `json:"kms_key_id"`
-	AuthTokenSecret  string        `json:"-"`
-	CORSAllowedOrigins []string    `json:"cors_allowed_origins"`
-	ShutdownTimeout  time.Duration `json:"shutdown_timeout"`
-	TreeScanEnforced bool          `json:"treescan_enforced"` // Must always be true for Article 1 compliance
+	Environment            string        `json:"environment"`
+	Domain                 string        `json:"domain"`
+	HTTPPort               int           `json:"http_port"`
+	DatabaseURL            string        `json:"database_url"`
+	RedisURL               string        `json:"redis_url"`
+	OpenSearchURL          string        `json:"opensearch_url"`
+	KMSKeyID               string        `json:"kms_key_id"`
+	AuthTokenSecret        string        `json:"-"`
+	AffiliateSigningSecret string        `json:"-"`
+	CORSAllowedOrigins     []string      `json:"cors_allowed_origins"`
+	ShutdownTimeout        time.Duration `json:"shutdown_timeout"`
+	TreeScanEnforced       bool          `json:"treescan_enforced"` // Must always be true for Article 1 compliance
+	// EnableRetiredCloudRoutes re-registers the retired 2026-11-26 /cloud/*
+	// BYOC surface. Default off: docs state no live server actions exist.
+	EnableRetiredCloudRoutes bool `json:"enable_retired_cloud_routes"`
 }
 
 // DefaultConfig provides secure defaults for CloudScanr.
 func DefaultConfig() *PlatformConfig {
 	return &PlatformConfig{
-		Environment:      getEnv("APP_ENV", "development"),
-		Domain:           getEnv("APP_DOMAIN", "cloudscanr.com"),
-		HTTPPort:         getEnvInt("HTTP_PORT", 8080),
-		DatabaseURL:      getEnv("DATABASE_URL", "postgres://cloudscanr:cloudscanr@localhost:5432/cloudscanr_prod?sslmode=disable"),
-		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379/0"),
-		OpenSearchURL:    getEnv("OPENSEARCH_URL", "http://localhost:9200"),
-		KMSKeyID:         getEnv("KMS_KEY_ID", "local-dev-mock-key-001"),
-		AuthTokenSecret:  getEnv("AUTH_TOKEN_SECRET", "dev-only-token-secret-change-me-32bytes"),
-		CORSAllowedOrigins: getEnvList("CORS_ALLOWED_ORIGINS"),
-		ShutdownTimeout:  15 * time.Second,
-		TreeScanEnforced: true,
+		Environment:              getEnv("APP_ENV", "development"),
+		Domain:                   getEnv("APP_DOMAIN", "cloudscanr.com"),
+		HTTPPort:                 getEnvInt("HTTP_PORT", 8080),
+		DatabaseURL:              getEnv("DATABASE_URL", "postgres://cloudscanr:cloudscanr@localhost:5432/cloudscanr_prod?sslmode=disable"),
+		RedisURL:                 getEnv("REDIS_URL", "redis://localhost:6379/0"),
+		OpenSearchURL:            getEnv("OPENSEARCH_URL", "http://localhost:9200"),
+		KMSKeyID:                 getEnv("KMS_KEY_ID", "local-dev-mock-key-001"),
+		AuthTokenSecret:          getEnv("AUTH_TOKEN_SECRET", "dev-only-token-secret-change-me-32bytes"),
+		AffiliateSigningSecret:   getEnv("AFFILIATE_SIGNING_SECRET", ""),
+		CORSAllowedOrigins:       getEnvList("CORS_ALLOWED_ORIGINS"),
+		ShutdownTimeout:          15 * time.Second,
+		TreeScanEnforced:         true,
+		EnableRetiredCloudRoutes: getEnvBool("ENABLE_RETIRED_CLOUD_ROUTES", false),
 	}
 }
 
@@ -61,8 +67,8 @@ func (c *PlatformConfig) Validate() error {
 		}
 	}
 
-	if !strings.Contains(c.Domain, "cloudscanr") && c.Environment == "production" {
-		return fmt.Errorf("production domain must be cloudscanr.com, got: %s", c.Domain)
+	if c.Environment == "production" && !strings.Contains(strings.ToLower(c.Domain), "tirpscanr") {
+		return fmt.Errorf("production domain must be in the tirpscanr.com family, got: %s", c.Domain)
 	}
 
 	return nil
@@ -206,6 +212,19 @@ func getEnvList(key string) []string {
 		}
 	}
 	return out
+}
+
+// getEnvBool parses a boolean environment variable (1/true/yes/on).
+func getEnvBool(key string, defaultVal bool) bool {
+	if val := os.Getenv(key); val != "" {
+		switch strings.ToLower(strings.TrimSpace(val)) {
+		case "1", "true", "yes", "on":
+			return true
+		case "0", "false", "no", "off":
+			return false
+		}
+	}
+	return defaultVal
 }
 
 func getEnvInt(key string, defaultVal int) int {

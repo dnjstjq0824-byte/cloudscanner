@@ -39,18 +39,33 @@ pnpm run deploy:pages   # deploys ./dist
 
 ## 2. Backend — Go API (container/VM)
 
+Development (zero-config; ports bind 127.0.0.1 only):
+
+```bash
+docker compose up --build -d
+curl http://localhost:8080/api/v1/readiness
+```
+
+Production (real secrets required; missing values fail fast):
+
 ```bash
 cp .env.example .env
-# Fill DATABASE_URL, AUTH_TOKEN_SECRET, AFFILIATE_SIGNING_SECRET, KMS_KEY_ID,
-# and CORS_ALLOWED_ORIGINS=https://tirpscanr.com,https://www.tirpscanr.com
-docker compose up --build -d
+# Fill APP_DOMAIN (tirpscanr.com family), DATABASE_URL, AUTH_TOKEN_SECRET
+# (32+ bytes), AFFILIATE_SIGNING_SECRET, KMS_KEY_ID, POSTGRES_USER,
+# POSTGRES_PASSWORD, POSTGRES_DB, and
+# CORS_ALLOWED_ORIGINS=https://tirpscanr.com,https://www.tirpscanr.com
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 curl https://api.tirpscanr.com/api/v1/readiness
 ```
 
 The API refuses production boot without a reachable database
-(`APP_ENV=production` + failing `DATABASE_URL` exits non-zero).
-`HTTP_PORT` (default 8080) and `CORS_ALLOWED_ORIGINS` (comma-separated,
-exact match, no wildcards) configure the listener and browser access.
+(`APP_ENV=production` + failing `DATABASE_URL` exits non-zero), without
+a tirpscanr.com-family `APP_DOMAIN`, and without a valid 32+ byte
+`AUTH_TOKEN_SECRET` (fail-closed, no fallback). `HTTP_PORT` (default
+8080) and `CORS_ALLOWED_ORIGINS` (comma-separated, exact match, no
+wildcards) configure the listener and browser access. Retired BYOC
+`/cloud/*` routes stay unregistered unless `ENABLE_RETIRED_CLOUD_ROUTES`
+is set to true.
 
 ## 3. Wiring checklist
 
@@ -72,11 +87,13 @@ exact match, no wildcards) configure the listener and browser access.
 - **Outbound deals:** `/go/*` is served only by the Go API, never by Nuxt, so
   deal links are always absolute against the API origin.
 
-## 3. Operations notes
+## 5. Operations notes
 
 - **Toolchain:** Go `1.27` (module, CI, and `Dockerfile.api`), Node `24`,
-  pnpm `9.15.0` (`packageManager` pinned; lockfile v(. Run web installs with
+  pnpm `9.15.0` (`packageManager` pinned; lockfile v9). Run web installs with
   `npx --yes pnpm@9.15.0 install` to match CI's `--frozen-lockfile` gate.
+- **Frontend gates:** `typecheck` + `vitest` + `build` are the only web gates
+  (no eslint configured); CI runs all three on every push/PR.
 - **Compose initdb:** `docker-compose.yml` bind-mounts `03_DATABASE/migrations/`
   to initdb; the `000012` rollback reference was relocated to
   `03_DATABASE/down_migrations_reference/` so fresh volumes never execute DROP
@@ -84,8 +101,9 @@ exact match, no wildcards) configure the listener and browser access.
 - **Maintenance mode:** `/api/v1/admin/settings` toggles a 503 gate over user
   traffic; health, readiness, metrics, admin, notices, and site-config stay
   reachable. The storefront shows active `/api/v1/notices` banners.
-- **Worker:** `cmd/worker` harvests all catalog/deal-ingestion adapters on boot and every
-  15 minutes; logs provider counts per run. (`pricing` package naming is historical.)
+- **Worker:** `cmd/worker` (the `worker` compose service, dev and prod) harvests
+  all catalog/deal-ingestion adapters on boot and every 15 minutes; logs
+  provider counts per run. (`pricing` package naming is historical.)
 - **Pivot note (2026-11-26):** brand is TirpScanner; `tirpscanr.com` is
   registered (wiring pending) and `api.`/`www.` are ASSUMED. Toolchain is
-  unchanged (see §3). BYOC/provisioning/server-management scope is retired.
+  unchanged (see §5). BYOC/provisioning/server-management scope is retired.

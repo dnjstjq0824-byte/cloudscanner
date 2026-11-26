@@ -33,7 +33,7 @@ Go `testing` + `testify` + `testcontainers-go` (real PostgreSQL 16, Redis 7.4, O
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `audit_logs`, `price_snapshots`, `affiliate_conversions`
@@ -62,7 +62,7 @@ Every screen in `05_UXUI/SCREEN_INVENTORY.csv` has dedicated Playwright desktop 
 ## 8. Core Processing Logic
 
 1. Three-Tier Feed API Testing:
-   - **Tier A (Deterministic Simulator)**: Local Go `httptest` server simulating exact PartnerStack, Impact, CJ, Awin, and Product Hunt responses and fault injections (latency, 429, 30, truncated feed payload).
+   - **Tier A (Deterministic Simulator)**: Local Go `httptest` server simulating exact PartnerStack, Impact, CJ, Awin, and Product Hunt responses and fault injections (latency, 429, 500, truncated feed payload).
    - **Tier B (Live Read-Only Verification)**: Safe coupon/offer polling against live network endpoints.
    - **Tier C (Authorized Live Conversion Checks)**: Strictly gated test conversions reconciled against sandbox advertiser accounts, reversed/voided after verification.
 2. Cloud-provisioning safety tiers (billable VM tests) are RETIRED.
@@ -103,7 +103,7 @@ Self-validating test harness verifying test coverage, fixture integrity, and Ope
 
 ## 14. Required Verification Evidence
 
-`13_TESTING/MASTER_TEST_MATRIX.csv`, `DEAL_AFFILIATE_E2E.md`, and CI test runner logs.
+`13_TESTING/MASTER_TEST_MATRIX.csv`, `13_TESTING/AFFILIATE_E2E.md`, `13_TESTING/SEARCH_E2E.md`, `13_TESTING/SECURITY_E2E.md`, and CI test runner logs.
 
 ---
 

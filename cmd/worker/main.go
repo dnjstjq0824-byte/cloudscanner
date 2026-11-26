@@ -53,7 +53,7 @@ func main() {
 			"elapsed_ms", time.Since(start).Milliseconds())
 	}
 
-	p.Logger.Info("cloudscanr background worker started", "env", cfg.Environment,
+	p.Logger.Info("tirpscanner background worker started", "env", cfg.Environment,
 		"harvest_interval", harvestInterval.String())
 
 	harvest("boot")

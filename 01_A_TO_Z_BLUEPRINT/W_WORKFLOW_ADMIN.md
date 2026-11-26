@@ -33,7 +33,7 @@ Go Admin API (`internal/api/admin`), Nuxt 3 Admin Console (`pages/admin/**`), Po
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `admin_actions`, `audit_logs`, `feature_flags`, `system_settings`, `price_sync_jobs`, `affiliate_conversions`, `commissions`
@@ -47,7 +47,7 @@ Go Admin API (`internal/api/admin`), Nuxt 3 Admin Console (`pages/admin/**`), Po
 
 **Primary OpenAPI 3.1 Endpoints (`04_API_SPECIFICATION/openapi.yaml`):**
 
-- `GET /api/v1/admin/dashboard`
+- `GET /api/v1/admin/overview`
 - `POST /api/v1/admin/providers`
 - `POST /api/v1/admin/pricing/quarantine/{id}/resolve`
 - `POST /api/v1/admin/affiliate/payouts/{id}/approve`

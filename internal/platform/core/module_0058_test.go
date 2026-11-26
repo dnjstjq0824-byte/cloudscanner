@@ -33,7 +33,7 @@ func TestModule0058_PrometheusMetrics(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 	body := rec.Body.String()
-	assert.Contains(t, body, "cloudscanr_http_requests_total")
-	assert.Contains(t, body, "cloudscanr_http_active_requests 1")
+	assert.Contains(t, body, "tirpscanner_http_requests_total")
+	assert.Contains(t, body, "tirpscanner_http_active_requests 1")
 }
 

@@ -22,7 +22,7 @@ Pricing Engine Agent, Data Scientist, Search User.
 
 ## 3. User Scenarios
 
-1. User views `/best-value-rankings` and selects the `AI Video Editing for Small Teams` preset; plans are ranked by weighted Effective Price-per-Seat (`40%`), Feature Coverage (`23%`), Trial/Freemium Generosity (`13%`), Renewal Fairness (`10%`), and Vendor Reliability (`10%`).
+1. User views `/best-value-rankings` and selects the `AI Video Editing for Small Teams` preset; plans are ranked by weighted Effective Price-per-Seat (`40%`), Feature Coverage (`25%`), Trial/Freemium Generosity (`15%`), Renewal Fairness (`10%`), and Vendor Reliability (`10%`).
 2. A plan with $0 affiliate commission outranks a high-commission plan whenever its objective features-per-dollar score is higher.
 
 ---
@@ -33,7 +33,7 @@ Go `internal/domain/ranking`, PostgreSQL precomputed score snapshots synced to O
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `product_skus`, `product_specs`, `price_snapshots`, `provider_reviews`

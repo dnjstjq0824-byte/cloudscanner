@@ -9,11 +9,8 @@
     <template v-else>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard :value="overview?.users_total ?? '—'" label="Registered Users" to="/admin/users" link-label="Manage members" />
-        <StatCard :value="overview?.servers_managed ?? '—'" label="Managed Servers" />
-        <StatCard :value="overview?.connections_active ?? '—'" label="Active Connections" />
-        <StatCard :value="overview?.approvals_signed ?? '—'" label="Approvals Signed" />
-        <StatCard :value="providerCount" label="Providers in Catalog" to="/admin/providers" link-label="Moderate catalog" />
-        <StatCard :value="verifiedCount" label="Verified Pricing APIs" />
+        <StatCard :value="providerCount" label="Vendors in Catalog" to="/admin/providers" link-label="Moderate catalog" />
+        <StatCard :value="verifiedCount" label="Verified Deal Feeds" />
         <StatCard :value="overview?.skus_indexed ?? '—'" label="Plans Indexed" />
         <div class="card p-6">
           <div class="flex items-center gap-2">
@@ -22,7 +19,7 @@
           </div>
           <div class="text-xs text-ink-secondary mt-2">
             Identity: <strong class="text-ink">{{ overview?.identity_store || '—' }}</strong>
-            · BYOC store: <strong class="text-ink">{{ overview?.management_store || '—' }}</strong>
+            · Sync coverage: <strong class="text-ink">{{ overview?.provider_sync_coverage || '—' }}</strong>
           </div>
         </div>
       </div>
@@ -45,14 +42,13 @@
       </div>
 
       <div class="card p-6 space-y-3">
-        <h3 class="text-sm font-bold text-ink">Sync status by provider</h3>
+        <h3 class="text-sm font-bold text-ink">Sync status by vendor</h3>
         <div class="overflow-x-auto -mx-6 px-6">
           <table class="table-shell min-w-[560px]">
             <thead>
               <tr>
-                <th class="py-2 pr-4">Provider</th>
-                <th class="py-2 pr-4">Pricing API</th>
-                <th class="py-2 pr-4">Management API</th>
+                <th class="py-2 pr-4">Vendor</th>
+                <th class="py-2 pr-4">Deal Feed</th>
                 <th class="py-2">Affiliate</th>
               </tr>
             </thead>
@@ -60,7 +56,6 @@
               <tr v-for="p in providers" :key="p.slug">
                 <td class="py-2 pr-4 font-semibold text-ink">{{ p.name }}</td>
                 <td class="py-2 pr-4"><StatusBadge :status="p.pricing_api_status" /></td>
-                <td class="py-2 pr-4"><StatusBadge :status="p.management_api_status" /></td>
                 <td class="py-2"><StatusBadge :status="p.affiliate_status" /></td>
               </tr>
             </tbody>

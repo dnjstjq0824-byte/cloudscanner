@@ -23,18 +23,18 @@ Identity Engineer, Security Agent, Individual User, Organization Owner, Organiza
 ## 3. User Scenarios
 
 1. Developer registers with email, verifies ownership via a single-use SHA-256 hashed token, enables TOTP + WebAuthn Passkey, and creates an Organization (`Acme Deals Team`).
-2. Organization Owner invites a Junior Analyst with the `ORG_VIEWER` role (can view alerts, comparisons, and deal reports; cannot curate catalog or approve payouts) and a Senior Editor with the `DEAL_CURATOR` role (can curate deals and publish buying guides within policy).
+2. Organization Owner invites a Junior Analyst with the `ORG_VIEWER` role (can view alerts, comparisons, and deal reports; cannot curate catalog or approve payouts) and a Senior Editor with the `CATALOG_OPERATOR` role (can curate deals and publish buying guides within policy).
 3. User requests GDPR/PIPA account export or deletion; the system exports personal data as JSON, revokes all active sessions, deletes alert subscriptions, and anonymizes audit pointers.
 
 ---
 
 ## 4. Technology Stack
 
-Go `internal/domain/identity`, Argon2id (`m=64MB, t=3, p=4`), PASETO v4 / JWT short-lived access tokens (15m) + rotating refresh tokens in `HttpOnly` cookies, WebAuthn (`go-webauthn`), TOTP (`pquerna/otp`), OAuth2 (`golang.org/x/oauth2`).
+Go `internal/domain/identity`, Argon2id (`m=64MB, t=3, p=4`), v1 HMAC-SHA256 short-lived access tokens (15m) + rotating refresh tokens in `HttpOnly` cookies, WebAuthn (`go-webauthn`), TOTP (`pquerna/otp`), OAuth2 (`golang.org/x/oauth2`).
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `users`, `organizations`, `organization_members`, `roles`, `sessions`, `auth_identities`, `audit_logs`
@@ -72,7 +72,7 @@ Clean standalone Auth pages (`/register`, `/login`, `/forgot-password`, `/mfa-ch
 1. Strict Role Matrix:
    - `ORG_OWNER`: Full org control, payout approval, member management.
    - `ORG_ADMIN`: Manage alerts/comparisons, curate deals, approve affiliate links.
-   - `DEAL_CURATOR`: Curate deals and guides; payout approval requires a second approver.
+   - `CATALOG_OPERATOR`: Curate deals and guides; payout approval requires a second approver.
    - `ORG_VIEWER`: Read-only access to alerts, cost reports, and comparison lists.
 2. Step-Up Authentication: Approving an affiliate payout, rotating a network API credential, or viewing security logs requires a fresh MFA/Passkey verification within the last 10 minutes (`step_up_verified_at`).
 

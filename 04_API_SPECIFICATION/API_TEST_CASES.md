@@ -35,3 +35,8 @@
 | `ATC-23` | 20_Content | `POST /api/v1/content/reviews` | Submit review as verified customer | `201 Created` (`verified_customer: true`) |
 | `ATC-24` | 21_Audit | `GET /api/v1/audit-logs` | Verify cryptographic hash chain (`prev_hash` -> `entry_hash`) | `200 OK` (`chain_valid: true`) |
 | `ATC-25` | 22_Notify | `GET /api/v1/notifications` | Fetch unread user notifications | `200 OK` |
+
+> Note 2026-11-26: retired `/cloud/*` cases (ATC-14–ATC-19) expect `404` because
+> the routes are unregistered by default (`ENABLE_RETIRED_CLOUD_ROUTES=false`).
+> `openapi.yaml` keeps the same operations with `deprecated: true` as the
+> retained contract for gated re-enable. Both sides agree; contradiction resolved.

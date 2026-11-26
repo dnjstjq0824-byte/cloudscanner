@@ -23,7 +23,7 @@ Backend Agent, Deal-Feed Agent, SRE.
 ## 3. User Scenarios
 
 1. User subscribes to a price-drop alert; the HTTP handler validates permissions, records an idempotent subscription, and returns `202 Accepted` with an alert ID.
-2. The deal-scan worker detects a 35 price drop on a tracked plan, enqueues a high-priority `alerts:price_drop` task, and the notification worker delivers email/webhook alerts with dedupe by `(alert_id, snapshot_id)`.
+2. The deal-scan worker detects a 35% price drop on a tracked plan, enqueues a high-priority `alerts:price_drop` task, and the notification worker delivers email/webhook alerts with dedupe by `(alert_id, snapshot_id)`.
 3. A deal-sync job encounters a transient network reset; Asynq retries with exponential backoff up to 3 times, and if still failing, moves the task to the DLQ and creates an Admin alert.
 
 ---
@@ -34,7 +34,7 @@ Go `hibiken/asynq` (Redis-backed distributed queue) + PostgreSQL durable job sta
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `background_jobs`, `outbox_events`, `price_sync_jobs`, `resource_operations`

@@ -24,7 +24,7 @@ Vendor Feed Agent, Data Engineering Lead, Operations Admin.
 
 1. Hourly scheduled worker polls affiliate-network APIs (PartnerStack, Impact, CJ, Awin) for coupon/promo deltas and conversion-capable offer changes.
 2. 6-hour scheduled worker re-scans vendor pricing pages and curated deal sources (AppSumo, StackSocial, Product Hunt launches) for plan re-tiering, new promos, and renewal-term changes.
-3. A vendor changes a plan price by >23% or a feed returns an unexpected empty array; the Anomaly Circuit Breaker halts automatic overwrite, keeps the last verified snapshot, and alerts the Admin Console (`Deal Discrepancy Queue`).
+3. A vendor changes a plan price by >25% or a feed returns an unexpected empty array; the Anomaly Circuit Breaker halts automatic overwrite, keeps the last verified snapshot, and alerts the Admin Console (`Deal Discrepancy Queue`).
 
 ---
 
@@ -34,7 +34,7 @@ Go `internal/adapters/pricing` worker pool (catalog/deal-ingestion; `pricing` pa
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `provider_data_sources`, `price_sync_jobs`, `price_snapshots`, `price_alerts`
@@ -77,7 +77,7 @@ Read-only system credentials for authenticated network APIs (PartnerStack, Impac
 
 ## 10. Failure Modes & Resilience
 
-Exponential backoff (2s, 4s, 8s, 12s, 32s) on HTTP 429/5xx. If a feed source fails for >24 hours, all plans from that source automatically transition from `FRESH` to `STALE` in the UI with a visible warning banner.
+Exponential backoff (2s, 4s, 8s, 16s, 32s) on HTTP 429/5xx. If a feed source fails for >24 hours, all plans from that source automatically transition from `FRESH` to `STALE` in the UI with a visible warning banner.
 
 ---
 

@@ -22,7 +22,7 @@ Pricing Engine Agent, Financial Analyst, End User Comparing SaaS Plans.
 
 ## 3. User Scenarios
 
-1. User compares an AI writer's `Pro` plan ($20/seat/mo monthly vs $12/seat/mo annual, 3-seat minimum, renewing at full rate) against a competitor's flat `$49/mo up to 10 seats` plan with an active 20-off coupon.
+1. User compares an AI writer's `Pro` plan ($20/seat/mo monthly vs $12/seat/mo annual, 3-seat minimum, renewing at full rate) against a competitor's flat `$49/mo up to 10 seats` plan with an active 20%-off coupon.
 2. User toggles between `Monthly Billing`, `Annual Billing (per-seat)`, `Annual Upfront Total`, and `Year-2 Renewal Cost` to expose intro-discount traps.
 3. User in South Korea selects `KRW (₩)` and `Include 10% VAT`; the engine converts USD/EUR raw rates using timestamped FX rates and clearly displays the FX snapshot timestamp and tax breakdown.
 
@@ -34,7 +34,7 @@ Go `internal/domain/estimation` using `shopspring/decimal` (12 decimal places in
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `price_snapshots`, `price_components`, `billing_terms`, `promotions`, `fx_rates`, `tax_policies`

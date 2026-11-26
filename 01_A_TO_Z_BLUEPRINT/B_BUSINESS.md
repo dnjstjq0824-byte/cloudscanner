@@ -35,7 +35,7 @@ Go `shopspring/decimal` for exact financial arithmetic, PostgreSQL double-entry 
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `affiliate_programs`, `affiliate_accounts`, `affiliate_campaigns`, `affiliate_links`, `affiliate_clicks`, `affiliate_conversions`, `commissions`, `commission_adjustments`, `affiliate_payouts`
@@ -77,7 +77,7 @@ Public FTC/KFTC Affiliate Disclosure banner on all comparison/product pages and 
 
 ## 9. Security & Access Control
 
-Immutable append-only ledger for `commissions` and `commission_adjustments` (PostgreSQL trigger prevents `UPDATE`/`DELETE` on finalized ledger entries; reversals must insert a compensating adjustment row). Role-based access restricted to `FINANCE_ADMIN` and `SUPER_ADMIN`.
+Immutable append-only ledger for `commissions` and `commission_adjustments` (PostgreSQL trigger prevents `UPDATE`/`DELETE` on finalized ledger entries; reversals must insert a compensating adjustment row). Role-based access restricted to `PAYOUT_APPROVER` and `SUPER_ADMIN`.
 
 ---
 

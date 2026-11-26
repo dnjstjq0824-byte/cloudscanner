@@ -53,9 +53,17 @@ authoritative implementation ledger.
 ## Addendum 2026-11-26 (TirpScanner pivot)
 This report (audit date 2026-10-28) is preserved as the CloudScanr-era record; nothing
 above was rewritten. The repository has pivoted to **TirpScanner**, a global SaaS/AI-tool
-& software affiliate deal scanner (`tirpscanr.com` family — registered, wiring pending). Retired: cloud
+& software affiliate deal scanner (apex `tirpscanr.com` registered, wiring pending; `api.`/`www.` ASSUMED). Retired: cloud
 catalog, BYOC connection, provisioning/management, resale, and the 22 provisioning safety
 scenarios. Live: SaaS/AI-tool catalog, deal scan / price-drop detection, affiliate
 monetization, content hub, admin & affiliate operations, and platform (auth, security,
 testing, DevOps). Revised adapter law: affiliate + catalog/deal-ingestion adapters live;
 management/BYOC + reseller adapters retired. See `TIRPSCANNER_PIVOT.md`.
+
+## Addendum 2026-11-26 (self-audit)
+
+Audit-count corrections, verified against live artifacts (pre-cut lines above preserved as record):
+- Item 4: 13 → 14 Direct Official Pricing APIs (14 `VERIFIED` in `PRICING_API_MATRIX.csv`; 14 names enumerated in the row).
+- Item 2: 10/2/5/1 → 11/2/4/1 (`VERIFIED` / `REQUIRES_APPLICATION` / `CONTRACT_REQUIRED` / `NOT_SUPPORTED` per `AFFILIATE_PROGRAMS.csv`).
+- CSV & JSON Audit: 9 → 10 CSV files (the row itself enumerates 10).
+- Item 9: 33 → 97 REST operations at audit time (53 live + 15 deprecated + 29 PLANNED stubs across 83 paths).

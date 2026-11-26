@@ -32,7 +32,7 @@ affiliate monetization, and content-driven rankings in a single platform:
 | **Service 2** | **Deal Scan & Price-Drop Detection** | Continuous deal ingestion, coupon/promo tracking, plan-price normalization (monthly vs annual vs lifetime, seats, usage tiers, VAT/GST, live FX rates), price-drop alerts, and freshness indicators. |
 | **Service 3** | **Affiliate Marketplace** | Compliant affiliate link routing (`/go/{link_slug}`), `SubID`/`ClickID` injection, bot filtering, conversion postback webhook & CSV reconciliation, double-entry Commission Ledger, and FTC/Fair-Trade disclosure badges. |
 | **Service 4** | **Creator & Content Hub** | Tool comparisons, deal roundups, review methodology, buying guides, and alternatives pages with Schema.org structured data. |
-| **Service 3** | **Admin & Affiliate Operations** | Central operations console for catalog/deal-ingestion sync health, stale-deal alerts, affiliate campaign/payout reconciliation, security incident monitoring, and SEO quality control. |
+| **Service 5** | **Admin & Affiliate Operations** | Central operations console for catalog/deal-ingestion sync health, stale-deal alerts, affiliate campaign/payout reconciliation, security incident monitoring, and SEO quality control. |
 
 ### Retired scope (CloudScanr era, no longer live)
 

@@ -2,7 +2,7 @@
   <div class="max-w-3xl mx-auto space-y-8 py-8">
     <div class="space-y-2">
       <h1 class="text-3xl font-extrabold text-white tracking-tight">Privacy Policy</h1>
-      <p class="text-xs text-slate-500">Last updated: November 1, 2026 · CloudScanr (cloudscanr.com)</p>
+      <p class="text-xs text-slate-500">Last updated: November 1, 2026 · TirpScanner (tirpscanr.com)</p>
     </div>
 
     <div class="space-y-6 text-sm text-slate-300 leading-relaxed">
@@ -33,12 +33,12 @@
 
       <section class="space-y-2">
         <h2 class="text-lg font-bold text-white">5. Retention and deletion</h2>
-        <p>Account data is retained while your account is active. Disconnecting a cloud account immediately revokes and wipes its stored credential blobs. You may request full account and data deletion at privacy@cloudscanr.com; audit logs required for financial compliance are retained in anonymized form where the law requires.</p>
+        <p>Account data is retained while your account is active. Disconnecting a cloud account immediately revokes and wipes its stored credential blobs. You may request full account and data deletion at privacy@tirpscanr.com; audit logs required for financial compliance are retained in anonymized form where the law requires.</p>
       </section>
 
       <section class="space-y-2">
         <h2 class="text-lg font-bold text-white">6. Your rights</h2>
-        <p>Depending on your jurisdiction (including GDPR and Korean PIPA rights), you may request access, correction, export, or deletion of your personal data. Contact privacy@cloudscanr.com and we will respond within 30 days.</p>
+        <p>Depending on your jurisdiction (including GDPR and Korean PIPA rights), you may request access, correction, export, or deletion of your personal data. Contact privacy@tirpscanr.com and we will respond within 30 days.</p>
       </section>
     </div>
   </div>
@@ -51,6 +51,6 @@ definePageMeta({
 
 useHead({
   title: 'Privacy Policy',
-  meta: [{ name: 'description', content: 'CloudScanr Privacy Policy: data collection, BYOC credential handling, retention, and your rights.' }],
+  meta: [{ name: 'description', content: 'TirpScanner Privacy Policy: data collection, BYOC credential handling, retention, and your rights.' }],
 })
 </script>

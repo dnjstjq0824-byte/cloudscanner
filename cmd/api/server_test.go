@@ -16,6 +16,8 @@ import (
 
 func TestAPIServer_FullRoutingSuite(t *testing.T) {
 	cfg := platform.DefaultConfig()
+	// Suite covers the retired /cloud/* surface: opt in explicitly.
+	cfg.EnableRetiredCloudRoutes = true
 	p, err := platform.Bootstrap(context.Background(), cfg)
 	require.NoError(t, err)
 
@@ -47,7 +49,7 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		router.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, rec.Body.String(), "cloudscanr_http_requests_total")
+		assert.Contains(t, rec.Body.String(), "tirpscanner_http_requests_total")
 	})
 
 	// 3. Catalog Providers
@@ -457,4 +459,44 @@ func TestAPIServer_FullRoutingSuite(t *testing.T) {
 		recCfg := admin(http.MethodGet, "/api/v1/admin/settings", "")
 		require.Equal(t, http.StatusOK, recCfg.Code)
 	})
+}
+
+// TestRetiredCloudRoutesGated verifies the 2026-11-26 pivot gate: the
+// retired /cloud/* BYOC surface is unregistered by default (404) and only
+// returns when ENABLE_RETIRED_CLOUD_ROUTES is set (401 unauthenticated).
+func TestRetiredCloudRoutesGated(t *testing.T) {
+	probe := func(t *testing.T, enable bool) int {
+		cfg := platform.DefaultConfig()
+		cfg.EnableRetiredCloudRoutes = enable
+		p, err := platform.Bootstrap(context.Background(), cfg)
+		require.NoError(t, err)
+		router := SetupRouter(p)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/cloud/servers", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	assert.Equal(t, http.StatusNotFound, probe(t, false))
+	assert.Equal(t, http.StatusUnauthorized, probe(t, true))
+}
+
+func TestResolveAffiliateKey(t *testing.T) {
+	dev := platform.DefaultConfig()
+	dev.Environment = "development"
+	dev.AffiliateSigningSecret = ""
+	key, err := resolveAffiliateKey(dev)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(key), 32)
+
+	prod := platform.DefaultConfig()
+	prod.Environment = "production"
+	prod.AffiliateSigningSecret = ""
+	_, err = resolveAffiliateKey(prod)
+	require.Error(t, err)
+
+	prod.AffiliateSigningSecret = "prod-secret-with-32-bytes-minimum!!"
+	key, err = resolveAffiliateKey(prod)
+	require.NoError(t, err)
+	assert.Equal(t, "prod-secret-with-32-bytes-minimum!!", string(key))
 }

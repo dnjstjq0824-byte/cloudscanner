@@ -30,8 +30,8 @@ info:
     PIVOT 2026-11-26 — TirpScanner: the /api/v1/cloud/* surface (groups 12–16:
     connections, provisioning, server management, budgets, costs) is RETIRED and
     every operation below carries deprecated:true. Live surface is
-    affiliate/catalog/deal/search/content/admin. Domains tirpscanr.com,
-    api.tirpscanr.com, www.tirpscanr.com are ASSUMED.
+    affiliate/catalog/deal/search/content/admin. Apex tirpscanr.com is
+    REGISTERED (wiring pending); api.tirpscanr.com, www.tirpscanr.com are ASSUMED.
   contact:
     name: TirpScanner Lead System Architecture Team
     url: https://tirpscanr.com
@@ -51,7 +51,7 @@ tags:
     description: Multi-Tenant Organizations, Team Invitations & RBAC Permissions
   - name: 04_Providers
     description: SaaS Vendors & AI Tools Directory, Plans & Regions
-  - name: 03_Cloud_Catalog
+  - name: 05_Cloud_Catalog
     description: SaaS/AI-Tool Catalog, Subscription Plans & Deal Snapshots
   - name: 06_Pricing
     description: Plan-Price Normalization, Deal Estimates, FX Rates, Tax Policies & Historical Snapshots
@@ -107,9 +107,9 @@ components:
       required: true
       schema:
         type: string
-        minLength: 12
+        minLength: 16
         maxLength: 64
-      description: Unique client key preventing duplicate execution and double billing. Replays return the stored outcome with X-Cache-Lookup HIT-IDEMPOTENCY.
+      description: "Unique client key preventing duplicate execution and double billing. Replays return the stored outcome; backed by a process-local in-memory store (single-instance only until a shared Redis backend lands)."
     OrgIdHeader:
       name: X-Organization-Id
       in: header
@@ -145,43 +145,39 @@ components:
         specs:
           type: object
           properties:
-            vcpu_count: { type: integer }
-            cpu_architecture: { type: string, enum: [x86_64, arm64] }
-            cpu_allocation_type: { type: string, enum: [SHARED, BURSTABLE, DEDICATED] }
-            ram_mb: { type: integer }
-            storage_type: { type: string, enum: [NVME, SSD, HDD, NETWORK_BLOCK, NONE] }
-            storage_gb: { type: integer }
-            included_bandwidth_gb: { type: integer }
-            ipv4_included_count: { type: integer }
-            ipv6_supported: { type: boolean }
-            gpu_model: { type: ["string", "null"] }
-            gpu_count: { type: integer }
-            gpu_vram_gb: { type: integer }
+            tier_code: { type: string, enum: [FREE, PLUS, PRO, TEAM, ENTERPRISE] }
+            billing_cycle: { type: string, enum: [MONTHLY, ANNUAL, BIENNIAL, LIFETIME, USAGE_BASED] }
+            seat_model: { type: string, enum: [FLAT, PER_SEAT, TIERED_SEATS, USAGE] }
+            included_seats: { type: integer }
+            trial_days: { type: integer }
+            trial_requires_card: { type: boolean }
+            usage_unit: { type: string }
+            usage_included_qty: { type: string }
         pricing:
           type: object
           properties:
             native_currency: { type: string }
-            raw_hourly_price: { type: string }
             raw_monthly_price: { type: string }
-            normalized_hourly_usd: { type: string }
-            normalized_monthly_730h_usd: { type: string }
+            raw_annual_price: { type: string }
+            monthly_equivalent: { type: string }
+            annual_discount_pct: { type: string }
+            per_seat_price: { type: string }
             tax_included: { type: boolean }
             collected_at: { type: string, format: date-time }
             official_source_url: { type: string, format: uri }
     TCOEstimateRequest:
       type: object
-      required: [sku_ids, usage_hours, estimated_egress_gb, target_currency]
+      required: [plan_ids, billing_cycle, seat_count, target_currency]
       properties:
-        sku_ids:
+        plan_ids:
           type: array
           items: { type: string, format: uuid }
           minItems: 1
           maxItems: 20
-        usage_hours: { type: integer, minimum: 1, maximum: 8784, default: 730 }
-        estimated_egress_gb: { type: number, minimum: 0, default: 500 }
-        required_ipv4_count: { type: integer, minimum: 0, maximum: 16, default: 1 }
-        enable_backups: { type: boolean, default: false }
-        snapshot_storage_gb: { type: number, minimum: 0, default: 0 }
+        billing_cycle: { type: string, enum: [MONTHLY, ANNUAL], default: MONTHLY }
+        seat_count: { type: integer, minimum: 1, default: 1 }
+        coupon_code: { type: string }
+        trial_days_remaining: { type: integer, minimum: 0, default: 0 }
         target_currency: { type: string, default: USD }
         country_code_for_tax: { type: string, default: KR }
         include_tax: { type: boolean, default: false }
@@ -268,6 +264,15 @@ paths:
       operationId: logoutUser
       responses:
         "204": { description: Session revoked }
+
+  /api/v1/auth/me:
+    get:
+      tags: [01_Authentication]
+      security: [{ BearerAuth: [] }]
+      summary: Return the authenticated session user profile
+      operationId: getAuthMe
+      responses:
+        "200": { description: User profile returned }
 
   # 2. Users API
   /api/v1/users/me:
@@ -364,24 +369,24 @@ paths:
       responses:
         "200": { description: Provider detail }
 
-  # 3. Cloud Catalog API
+  # 5. Cloud Catalog API
   /api/v1/catalog/categories:
     get:
-      tags: [03_Cloud_Catalog]
+      tags: [05_Cloud_Catalog]
       summary: List all SaaS/AI-tool categories and plan counts
       operationId: listCatalogCategories
       responses:
         "200": { description: Category taxonomy }
   /api/v1/catalog/skus:
     get:
-      tags: [03_Cloud_Catalog]
+      tags: [05_Cloud_Catalog]
       summary: List normalized SaaS plans with specs and latest price snapshots
       operationId: listCatalogSKUs
       responses:
         "200": { description: Paginated SKU list }
   /api/v1/catalog/skus/{sku_id}:
     get:
-      tags: [03_Cloud_Catalog]
+      tags: [05_Cloud_Catalog]
       summary: Get full normalized plan specification, historical price chart, and official source link
       operationId: getSKUDetail
       parameters:
@@ -462,15 +467,15 @@ paths:
         - name: category
           in: query
           schema: { type: string }
-        - name: min_vcpu
-          in: query
-          schema: { type: integer }
-        - name: min_ram_gb
-          in: query
-          schema: { type: integer }
-        - name: gpu_model
+        - name: billing_cycle
           in: query
           schema: { type: string }
+        - name: max_per_seat_usd
+          in: query
+          schema: { type: number }
+        - name: trial_required
+          in: query
+          schema: { type: boolean }
         - name: max_monthly_usd
           in: query
           schema: { type: number }
@@ -551,6 +556,20 @@ paths:
       responses:
         "201": { description: Connection verified and encrypted with KMS DEK+AAD }
   /api/v1/cloud/connections/{connection_id}:
+    get:
+      tags: [12_Cloud_Connection]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/OrgIdHeader" }
+        - name: connection_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      summary: "[RETIRED 2026-11-26] Get a BYOC connection"
+      operationId: getCloudConnection
+      deprecated: true
+      responses:
+        "200": { description: Tenant-isolated connection detail }
     delete:
       tags: [12_Cloud_Connection]
       security: [{ BearerAuth: [], StepUpMFAAuth: [] }]
@@ -565,6 +584,16 @@ paths:
       deprecated: true
       responses:
         "204": { description: Account disconnected and credentials wiped }
+
+  /api/v1/cloud/resources:
+    get:
+      tags: [12_Cloud_Connection]
+      security: [{ BearerAuth: [] }]
+      summary: "[RETIRED 2026-11-26] List tenant cloud resource inventory"
+      operationId: listCloudResources
+      deprecated: true
+      responses:
+        "200": { description: Tenant-isolated resources list }
 
   # 13. Server Provisioning API — RETIRED 2026-11-26 (BYOC removed)
   /api/v1/cloud/approvals:
@@ -932,3 +961,234 @@ paths:
       operationId: listNotifications
       responses:
         "200": { description: Notifications list }
+
+  # PLANNED (2026-11-26 self-audit): referenced by A-Z blueprints, not implemented.
+  # Each entry below needs design + implementation + contract tests before use.
+  /api/v1/admin/affiliate/programs:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] List affiliate programs for admin moderation"
+      operationId: listAffiliatePrograms
+      responses:
+        "200": { description: Affiliate programs list }
+  /api/v1/admin/affiliate/reconcile:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Trigger affiliate conversion reconciliation"
+      operationId: reconcileAffiliate
+      responses:
+        "202": { description: Reconciliation accepted }
+  /api/v1/admin/affiliate/ledger:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Read the double-entry commission ledger"
+      operationId: readCommissionLedger
+      responses:
+        "200": { description: Commission ledger entries }
+  /api/v1/admin/affiliate/payouts:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Create an affiliate payout batch"
+      operationId: createPayoutBatch
+      responses:
+        "201": { description: Payout batch created }
+  /api/v1/admin/affiliate/payouts/{id}/approve:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Approve an affiliate payout batch"
+      operationId: approvePayoutBatch
+      responses:
+        "200": { description: Payout batch approved }
+  /api/v1/admin/affiliate/credentials/{id}/rotate:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Rotate an affiliate network credential"
+      operationId: rotateAffiliateCredential
+      responses:
+        "200": { description: Credential rotated }
+  /api/v1/admin/affiliate/credentials/{id}:
+    delete:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Delete an affiliate network credential"
+      operationId: deleteAffiliateCredential
+      responses:
+        "204": { description: Credential deleted }
+  /api/v1/admin/pricing/sync/{provider_id}:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Trigger a vendor pricing sync"
+      operationId: triggerPricingSync
+      responses:
+        "202": { description: Sync accepted }
+  /api/v1/admin/pricing/jobs:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] List pricing sync jobs"
+      operationId: listPricingJobs
+      responses:
+        "200": { description: Pricing sync jobs }
+  /api/v1/admin/pricing/failures:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] List pricing sync failures"
+      operationId: listPricingFailures
+      responses:
+        "200": { description: Pricing sync failures }
+  /api/v1/admin/jobs:
+    get:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Inspect background job queues"
+      operationId: listJobs
+      responses:
+        "200": { description: Job queue depths }
+  /api/v1/admin/jobs/{job_id}/retry:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Retry a dead-letter job"
+      operationId: retryJob
+      responses:
+        "200": { description: Job requeued }
+  /api/v1/admin/jobs/{job_id}/cancel:
+    delete:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Cancel a queued job"
+      operationId: cancelJob
+      responses:
+        "200": { description: Job cancelled }
+  /api/v1/admin/search/reindex:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Trigger a search index rebuild"
+      operationId: triggerReindex
+      responses:
+        "202": { description: Reindex accepted }
+  /api/v1/admin/providers:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Register a vendor for catalog ingestion"
+      operationId: createProvider
+      responses:
+        "201": { description: Provider registered }
+  /api/v1/admin/security/orgs/{id}/freeze:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Freeze tenant operations after a security incident"
+      operationId: freezeOrg
+      responses:
+        "200": { description: Organization frozen }
+  /api/v1/admin/pricing/quarantine/{id}/resolve:
+    post:
+      tags: [19_Admin]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Resolve a quarantined pricing anomaly"
+      operationId: resolveQuarantine
+      responses:
+        "200": { description: Quarantine resolved }
+  /api/v1/pricing/tax-policies:
+    get:
+      tags: [06_Pricing]
+      summary: "[PLANNED] List country VAT/GST tax policies"
+      operationId: listTaxPolicies
+      responses:
+        "200": { description: Tax policies }
+  /api/v1/pricing/scenarios:
+    get:
+      tags: [06_Pricing]
+      summary: "[PLANNED] List saved pricing scenarios"
+      operationId: listPricingScenarios
+      responses:
+        "200": { description: Pricing scenarios }
+  /api/v1/users/me/preferences:
+    patch:
+      tags: [02_Users]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Update account preferences"
+      operationId: updatePreferences
+      responses:
+        "200": { description: Preferences updated }
+  /api/v1/auth/passkeys/register:
+    post:
+      tags: [01_Authentication]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Register a WebAuthn passkey"
+      operationId: registerPasskey
+      responses:
+        "201": { description: Passkey registered }
+  /api/v1/search/autocomplete:
+    get:
+      tags: [08_Search]
+      summary: "[PLANNED] Autocomplete search queries"
+      operationId: autocompleteSearch
+      responses:
+        "200": { description: Suggestions }
+  /api/v1/search/parse-query:
+    post:
+      tags: [08_Search]
+      summary: "[PLANNED] Parse a natural-language query into filter chips"
+      operationId: parseSearchQuery
+      responses:
+        "200": { description: Parsed filter chips }
+  /api/v1/rankings/recommend:
+    post:
+      tags: [08_Search]
+      summary: "[PLANNED] Get personalized ranking recommendations"
+      operationId: recommendRankings
+      responses:
+        "200": { description: Recommendations }
+  /api/v1/notifications/test-webhook:
+    post:
+      tags: [22_Notifications]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Send a test notification webhook"
+      operationId: testWebhook
+      responses:
+        "200": { description: Test webhook sent }
+  /api/v1/analytics/search-trends:
+    get:
+      tags: [18_Analytics]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Search demand trends report"
+      operationId: searchTrends
+      responses:
+        "200": { description: Search trends }
+  /api/v1/analytics/deal-performance:
+    get:
+      tags: [18_Analytics]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Deal performance report"
+      operationId: dealPerformance
+      responses:
+        "200": { description: Deal performance }
+  /api/v1/analytics/deal-forecast:
+    get:
+      tags: [18_Analytics]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Deal forecast report"
+      operationId: dealForecast
+      responses:
+        "200": { description: Deal forecast }
+  /api/v1/audit/integrity-verify:
+    get:
+      tags: [21_Audit]
+      security: [{ BearerAuth: [] }]
+      summary: "[PLANNED] Verify audit-log hash-chain integrity"
+      operationId: verifyAuditIntegrity
+      responses:
+        "200": { description: Integrity report }
+

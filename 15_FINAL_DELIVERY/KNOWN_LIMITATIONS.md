@@ -30,3 +30,14 @@ billable provisioning tests) is moot â€” provisioning scope is retired. Items 1â
 relevant in reframed form: SaaS/AI-tool vendor affiliate approvals, non-cash reward
 programs, and vendors without public deal/price feeds still require operator verification
 and must never be fabricated. See `TIRPSCANNER_PIVOT.md`.
+
+## Addendum 2026-11-26 (self-audit)
+
+Current deploy blockers and gaps (verified this date):
+- Fixed: production domain gate accepts `tirpscanr.com`; `AUTH_TOKEN_SECRET`
+  and `AFFILIATE_SIGNING_SECRET` are enforced and wired (compose prod fails
+  fast without them); retired `/cloud/*` routes are unregistered by default.
+- Open: backup jobs + tested restore drill (target architecture only);
+  golden-signal metrics and PagerDuty (only 2 HTTP Prometheus metrics live);
+  `api.tirpscanr.com` DNS/TLS and `www.` wiring; Pages dashboard env values;
+  affiliate-network publisher approvals per item 1 above.

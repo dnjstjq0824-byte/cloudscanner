@@ -8,7 +8,7 @@
 
 ## 1. Flow A: SaaS Deal Ingestion & Plan-Price Normalization Flow
 1. **Trigger**: `cs-worker-deals` cron triggers hourly (Tier-1 vendor pricing/deal feeds) or every 6 hours (affiliate network product feeds and bulk catalogs).
-2. **Fetch**: `CatalogAdapter` calls official endpoints (e.g., vendor pricing APIs, Impact/CJ product catalog feeds, curated deal sources).
+2. **Fetch**: `PricingAdapter` (catalog/deal-ingestion role; name historical) calls official endpoints (e.g., vendor pricing APIs, Impact/CJ product catalog feeds, curated deal sources).
 3. **Archive & Hash**: Raw response is hashed (`SHA-256`) and archived. If unchanged from last snapshot, `price_snapshots.verified_at` is bumped.
 4. **Anomaly Guard**: If price delta > 25% or plan count drops > 20%, payload is routed to `QUARANTINED` for Admin review.
 5. **Normalize & Index**: Validated plans update the SaaS catalog and insert immutable `price_snapshots`. Outbox event triggers bulk update on OpenSearch `tirpscanner_deals_read`, runs price-drop detection against previous snapshots, and evaluates user `price_alerts`.

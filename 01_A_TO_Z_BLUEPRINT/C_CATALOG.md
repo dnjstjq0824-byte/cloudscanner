@@ -34,7 +34,7 @@ PostgreSQL 16 (Relational core + JSONB category-specific extension attributes va
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `cloud_providers`, `provider_regions`, `provider_products`, `product_skus`, `product_specs`
@@ -100,7 +100,7 @@ Schema validation tests across all SaaS/AI-tool categories, availability-locale 
 
 - [x] All live SaaS/AI-tool categories are supported without requiring schema-breaking DDL migrations.
 - [x] Every plan accurately records billing interval, per-seat price, trial/freemium terms, usage quotas, and renewal terms.
-- [x] Canonical availability mapping normalizes vendor-stated locales into ISO-3126 country codes and currencies.
+- [x] Canonical availability mapping normalizes vendor-stated locales into ISO-3166 country codes and currencies.
 
 ---
 

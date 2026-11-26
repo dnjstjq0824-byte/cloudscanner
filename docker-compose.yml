@@ -1,31 +1,32 @@
-version: '3.9'
-
+# Development compose: zero-config boot with local defaults.
+# All ports bind 127.0.0.1 (never public). Production uses
+# docker-compose.prod.yml on top of this file (real secrets required).
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: cloudscanr-postgres
+    container_name: tirpscanner-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: cloudscanr
-      POSTGRES_PASSWORD: cloudscanr_dev_password_only
-      POSTGRES_DB: cloudscanr_prod
+      POSTGRES_USER: ${POSTGRES_USER:-tirpscanner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tirpscanner_dev_password_only}
+      POSTGRES_DB: ${POSTGRES_DB:-tirpscanner_dev}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./03_DATABASE/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cloudscanr -d cloudscanr_prod"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tirpscanner} -d ${POSTGRES_DB:-tirpscanner_dev}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7.4-alpine
-    container_name: cloudscanr-redis
+    container_name: tirpscanner-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -36,15 +37,17 @@ services:
 
   opensearch:
     image: opensearchproject/opensearch:2.17.0
-    container_name: cloudscanr-opensearch
+    container_name: tirpscanner-opensearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      # Dev only. Production must terminate TLS + enable the security
+      # plugin with real certs (follow-up; see SELF_AUDIT_2026-11-26.md).
       - DISABLE_SECURITY_PLUGIN=true
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - osdata:/usr/share/opensearch/data
     healthcheck:
@@ -57,7 +60,7 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile.api
-    container_name: cloudscanr-api
+    container_name: tirpscanner-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -65,18 +68,40 @@ services:
       redis:
         condition: service_healthy
     environment:
-      APP_ENV: development
-      APP_DOMAIN: cloudscanr.com
-      HTTP_PORT: 8080
-      DATABASE_URL: postgres://cloudscanr:cloudscanr_dev_password_only@postgres:5432/cloudscanr_prod?sslmode=disable
-      REDIS_URL: redis://redis:6379/0
-      OPENSEARCH_URL: http://opensearch:9200
-      KMS_KEY_ID: local-dev-mock-key-001
+      APP_ENV: ${APP_ENV:-development}
+      APP_DOMAIN: ${APP_DOMAIN:-tirpscanr.com}
+      HTTP_PORT: ${HTTP_PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgres://tirpscanner:tirpscanner_dev_password_only@postgres:5432/tirpscanner_dev?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      KMS_KEY_ID: ${KMS_KEY_ID:-local-dev-mock-key-001}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-}
+      AFFILIATE_SIGNING_SECRET: ${AFFILIATE_SIGNING_SECRET:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      ENABLE_RETIRED_CLOUD_ROUTES: ${ENABLE_RETIRED_CLOUD_ROUTES:-false}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.worker
+    container_name: tirpscanner-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DOMAIN: ${APP_DOMAIN:-tirpscanr.com}
+      DATABASE_URL: ${DATABASE_URL:-postgres://tirpscanner:tirpscanner_dev_password_only@postgres:5432/tirpscanner_dev?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      KMS_KEY_ID: ${KMS_KEY_ID:-local-dev-mock-key-001}
 
 volumes:
   pgdata:
   redisdata:
   osdata:
-

@@ -27,7 +27,7 @@ func TestBootstrap_DatabaseFallback(t *testing.T) {
 func TestBootstrap_ProductionRequiresDatabase(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Environment = "production"
-	cfg.Domain = "cloudscanr.com"
+	cfg.Domain = "tirpscanr.com"
 	cfg.DatabaseURL = "postgres://invalid:invalid@127.0.0.1:1/cloudscanr_prod?sslmode=disable&connect_timeout=1"
 
 	p, err := Bootstrap(context.Background(), cfg)

@@ -33,7 +33,7 @@ Globalization Engineer, Pricing Engine Agent, Content Localization Lead.
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `fx_rates`, `tax_policies`, `articles`

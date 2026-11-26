@@ -3,7 +3,7 @@
     <header class="border-b border-subtle bg-surface/90">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
         <NuxtLink to="/" class="text-xl font-bold text-brand">
-          <span>CloudScanr</span>
+          <span>TirpScanner</span>
         </NuxtLink>
       </div>
     </header>

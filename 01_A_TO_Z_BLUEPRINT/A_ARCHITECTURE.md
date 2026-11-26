@@ -35,7 +35,7 @@ Go 1.23+ (Chi/Echo HTTP router, pgx/v5 PostgreSQL driver, Asynq distributed task
 
 ---
 
-## 3. Database Schema & Tables
+## 5. Database Schema & Tables
 
 **Target PostgreSQL 16 Tables (`03_DATABASE/migrations/`):**  
 `users`, `organizations`, `cloud_providers`, `product_skus`, `price_snapshots`, `affiliate_links`, `outbox_events`, `audit_logs`
@@ -79,13 +79,13 @@ Three physically and logically separated frontend layouts: (1) Public Web (`layo
 
 ## 9. Security & Access Control
 
-Complete network and credential isolation from TreeScan. Mutual TLS (mTLS) between internal2. Strict CORS policy (`https://tirpscanr.com` — registered, wiring pending). Zero raw secrets in environment variables or database tables (all affiliate-network API keys encrypted via KMS Envelope Encryption). Per-tenant PostgreSQL Row-Level Security (`app.current_org_id`).
+Complete network and credential isolation from TreeScan. Mutual TLS (mTLS) between internal pods. Strict CORS policy (`https://tirpscanr.com` — registered, wiring pending). Zero raw secrets in environment variables or database tables (all affiliate-network API keys encrypted via KMS Envelope Encryption). Per-tenant PostgreSQL Row-Level Security (`app.current_org_id`).
 
 ---
 
 ## 10. Failure Modes & Resilience
 
-Circuit breakers trip after 3 consecutive feed-source 3xx errors (half-open after 60s). If OpenSearch is unreachable, `SearchService` automatically falls back to PostgreSQL indexed queries (`pg_trgm` + composite B-tree on `product_skus`). If Redis is degraded, `/go/{slug}` reads from an in-memory LRU cache synced every 30s from PostgreSQL so affiliate monetization never drops a click.
+Circuit breakers trip after 5 consecutive feed-source 5xx errors (half-open after 60s). If OpenSearch is unreachable, `SearchService` automatically falls back to PostgreSQL indexed queries (`pg_trgm` + composite B-tree on `product_skus`). If Redis is degraded, `/go/{slug}` reads from an in-memory LRU cache synced every 30s from PostgreSQL so affiliate monetization never drops a click.
 
 ---
 
